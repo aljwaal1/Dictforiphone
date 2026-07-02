@@ -35,6 +35,11 @@
     return { word, meaning };
   }
 
+  function getActiveWord() {
+    const activeCard = Array.from(document.querySelectorAll('.card')).find(card => card.querySelector('[data-speak]'));
+    return activeCard ? getWordFromCard(activeCard) : { word: '', meaning: '' };
+  }
+
   function isVerb(ar) {
     return /^(ي|ت|أ|ن)/.test(String(ar || '').trim());
   }
@@ -98,10 +103,10 @@
   function saveProgress() {
     const title = cleanText(document.querySelector('.title')?.textContent || '');
     const select = document.getElementById('gradeSelect');
-    const activeCard = Array.from(document.querySelectorAll('.card')).find(card => card.querySelector('[data-speak]'));
-    const { word, meaning } = activeCard ? getWordFromCard(activeCard) : { word: '', meaning: '' };
+    const { word, meaning } = getActiveWord();
     if (!word) return;
-    const chip = cleanText(activeCard.querySelector('.chip')?.textContent || '');
+    const activeCard = Array.from(document.querySelectorAll('.card')).find(card => card.querySelector('[data-speak]'));
+    const chip = cleanText(activeCard?.querySelector('.chip')?.textContent || '');
     const progress = { title, grade: select?.value || '', gradeText: gradeLabel(), word, meaning, chip, savedAt: Date.now() };
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
   }
@@ -124,6 +129,38 @@
     grid.insertBefore(btn, grid.firstChild);
   }
 
+  function trySetGrade(progress) {
+    const select = document.getElementById('gradeSelect');
+    if (!select || !progress?.grade) return;
+    if (select.value !== progress.grade) {
+      select.value = progress.grade;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  function seekSavedWord(progress, triesLeft) {
+    if (!progress?.word || triesLeft <= 0) return;
+    const current = getActiveWord();
+    if (cleanText(current.word).toLowerCase() === cleanText(progress.word).toLowerCase()) {
+      saveProgress();
+      return;
+    }
+    const next = document.querySelector('[data-card="next"]');
+    if (!next) return;
+    next.click();
+    setTimeout(function () { seekSavedWord(progress, triesLeft - 1); }, 45);
+  }
+
+  function resumeProgress() {
+    const progress = readProgress();
+    const cardsBtn = document.querySelector('[data-go="cards"]');
+    if (cardsBtn) cardsBtn.click();
+    setTimeout(function () {
+      trySetGrade(progress);
+      setTimeout(function () { seekSavedWord(progress, 180); }, 120);
+    }, 120);
+  }
+
   function enhancePage() {
     document.querySelectorAll('.card').forEach(enhanceCard);
     addResumeTile();
@@ -133,8 +170,9 @@
   document.addEventListener('click', function (event) {
     const resume = event.target.closest('[data-v2-resume]');
     if (resume) {
-      const cardsBtn = document.querySelector('[data-go="cards"]');
-      if (cardsBtn) cardsBtn.click();
+      event.preventDefault();
+      event.stopPropagation();
+      resumeProgress();
       return;
     }
     const cardMove = event.target.closest('[data-card], [data-master], [data-answer]');
