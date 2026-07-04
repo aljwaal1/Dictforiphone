@@ -1,16 +1,14 @@
 // V2 learning enhancements for Qamoosi School PWA
-// Adds example sentences, sentence pronunciation, sentence translation, and resume progress without rewriting the original app.
+// Clean step-by-step learning flow + resume progress + quiz-driven review support.
 (function () {
   'use strict';
 
   const PROGRESS_KEY = 'qamoosi_v2_last_progress';
+  const QUIZ_REVIEW_KEY = 'qamoosi_v2_quiz_review_words';
   const ENHANCED_ATTR = 'data-v2-enhanced';
 
   function cleanText(value) {
-    return String(value || '')
-      .replace(/🔊/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+    return String(value || '').replace(/🔊/g, '').replace(/\s+/g, ' ').trim();
   }
 
   function escapeHtml(value) {
@@ -50,33 +48,46 @@
     const startsWithVowel = /^[aeiou]/i.test(w);
     const article = startsWithVowel ? 'an' : 'a';
 
+    // Curated examples for common starter words. More can be added later in JSON as sentence_en/sentence_ar.
     const special = {
-      apple: ['I eat an apple.', 'أنا آكل تفاحة.'],
-      banana: ['I eat a banana.', 'أنا آكل موزة.'],
-      orange: ['I eat an orange.', 'أنا آكل برتقالة.'],
-      cat: ['The cat is small.', 'القطة صغيرة.'],
-      dog: ['The dog is happy.', 'الكلب سعيد.'],
-      bird: ['The bird can fly.', 'الطائر يستطيع الطيران.'],
-      fish: ['The fish is in the water.', 'السمكة في الماء.'],
-      sun: ['The sun is bright.', 'الشمس ساطعة.'],
-      moon: ['The moon is in the sky.', 'القمر في السماء.'],
-      book: ['This is my book.', 'هذا كتابي.'],
-      pen: ['I have a pen.', 'لدي قلم.'],
-      school: ['I go to school.', 'أنا أذهب إلى المدرسة.'],
-      teacher: ['The teacher is kind.', 'المعلم لطيف.'],
-      friend: ['My friend is here.', 'صديقي هنا.'],
-      water: ['I drink water.', 'أنا أشرب الماء.'],
-      milk: ['I drink milk.', 'أنا أشرب الحليب.'],
-      car: ['The car is fast.', 'السيارة سريعة.'],
-      bus: ['The bus is big.', 'الحافلة كبيرة.'],
-      pencil: ['I write with a pencil.', 'أنا أكتب بقلم رصاص.'],
-      notebook: ['My notebook is in my bag.', 'دفتري في حقيبتي.']
+      apple: ['I put an apple in my lunch box.', 'أضع تفاحة في صندوق غذائي.'],
+      banana: ['The monkey likes bananas.', 'القرد يحب الموز.'],
+      orange: ['Orange juice is cold and fresh.', 'عصير البرتقال بارد وطازج.'],
+      cat: ['The cat sleeps on the chair.', 'القطة تنام على الكرسي.'],
+      dog: ['The dog runs in the garden.', 'الكلب يركض في الحديقة.'],
+      bird: ['A bird is singing in the tree.', 'طائر يغني على الشجرة.'],
+      fish: ['The fish swims in clean water.', 'السمكة تسبح في ماء نظيف.'],
+      cow: ['The cow gives us milk.', 'البقرة تعطينا الحليب.'],
+      horse: ['The horse runs very fast.', 'الحصان يركض بسرعة كبيرة.'],
+      duck: ['The duck walks near the pond.', 'البطة تمشي قرب البركة.'],
+      sun: ['The sun rises in the morning.', 'تشرق الشمس في الصباح.'],
+      moon: ['The moon shines at night.', 'القمر يضيء في الليل.'],
+      star: ['I can see a bright star.', 'أستطيع رؤية نجمة لامعة.'],
+      sky: ['The sky is blue today.', 'السماء زرقاء اليوم.'],
+      rain: ['The rain makes the garden green.', 'المطر يجعل الحديقة خضراء.'],
+      water: ['Please drink enough water.', 'من فضلك اشرب كمية كافية من الماء.'],
+      milk: ['I drink milk before school.', 'أشرب الحليب قبل المدرسة.'],
+      bread: ['We buy fresh bread in the morning.', 'نشتري خبزاً طازجاً في الصباح.'],
+      book: ['I read a story in my book.', 'أقرأ قصة في كتابي.'],
+      pen: ['I write my name with a pen.', 'أكتب اسمي بقلم.'],
+      pencil: ['I draw a flower with a pencil.', 'أرسم زهرة بقلم رصاص.'],
+      school: ['I meet my friends at school.', 'أقابل أصدقائي في المدرسة.'],
+      teacher: ['My teacher helps me understand the lesson.', 'معلمي يساعدني على فهم الدرس.'],
+      friend: ['A good friend shares and helps.', 'الصديق الجيد يشارك ويساعد.'],
+      car: ['The car stops at the red light.', 'السيارة تتوقف عند الإشارة الحمراء.'],
+      bus: ['The bus takes students to school.', 'الحافلة تنقل الطلاب إلى المدرسة.'],
+      family: ['My family eats dinner together.', 'عائلتي تتناول العشاء معاً.'],
+      garden: ['Flowers grow in the garden.', 'تنمو الأزهار في الحديقة.'],
+      classroom: ['We listen carefully in the classroom.', 'نستمع بانتباه في غرفة الصف.'],
+      lesson: ['The lesson starts after the bell.', 'يبدأ الدرس بعد الجرس.'],
+      question: ['I ask a question when I do not understand.', 'أسأل سؤالاً عندما لا أفهم.'],
+      answer: ['The answer is written on the board.', 'الإجابة مكتوبة على اللوح.']
     };
 
     if (special[w]) return { sentence: special[w][0], translation: special[w][1] };
-    if (w.includes(' ')) return { sentence: `I can say: ${w}.`, translation: `أستطيع أن أقول: ${m}.` };
-    if (isVerb(m)) return { sentence: `I can ${w}.`, translation: `أنا أستطيع أن ${m}.` };
-    return { sentence: `This is ${article} ${w}.`, translation: `هذا/هذه ${m}.` };
+    if (w.includes(' ')) return { sentence: `I use the phrase "${w}" in class.`, translation: `أستخدم عبارة "${m}" في الصف.` };
+    if (isVerb(m)) return { sentence: `I ${w} when I need to practice.`, translation: `أنا ${m} عندما أحتاج إلى التدريب.` };
+    return { sentence: `I learned the word ${w} today.`, translation: `تعلمت كلمة ${m} اليوم.` };
   }
 
   function enhanceCard(card) {
@@ -84,20 +95,46 @@
     const { word, meaning } = getWordFromCard(card);
     if (!word || !meaning) return;
 
+    const isLearningCard = !!card.querySelector('[data-card], [data-master]');
+    const toggleBtn = card.querySelector('[data-toggle-next]');
+    const masterBtn = card.querySelector('[data-master]');
+    const nextBtn = card.querySelector('[data-card="next"]');
+
+    if (toggleBtn) toggleBtn.textContent = isLearningCard ? '👁 لا أعرفها / أظهر المعنى' : '👁 أظهر المعنى';
+    if (masterBtn) {
+      masterBtn.textContent = '✅ أعرفها — تخطّي';
+      masterBtn.classList.add('green');
+    }
+    if (nextBtn) nextBtn.textContent = 'التالي';
+
     const ex = makeExample(word, meaning);
     const block = document.createElement('div');
-    block.className = 'v2-example';
+    block.className = 'v2-example hidden';
     block.innerHTML = `
-      <div class="v2-label">مثال</div>
-      <div class="v2-sentence ltr">${escapeHtml(ex.sentence)}</div>
-      <button class="btn alt v2-speak" data-speak="${escapeHtml(ex.sentence)}" type="button">🔊 استمع للجملة</button>
-      <div class="v2-translation">${escapeHtml(ex.translation)}</div>
+      <button class="btn alt v2-step-btn" data-v2-show="example" type="button">📝 أظهر المثال</button>
+      <div class="v2-example-body hidden">
+        <div class="v2-label">مثال</div>
+        <div class="v2-sentence ltr">${escapeHtml(ex.sentence)}</div>
+        <button class="btn alt v2-speak" data-speak="${escapeHtml(ex.sentence)}" type="button">🔊 استمع للجملة</button>
+        <button class="btn alt v2-step-btn" data-v2-show="translation" type="button">🌍 أظهر ترجمة الجملة</button>
+        <div class="v2-translation hidden">${escapeHtml(ex.translation)}</div>
+      </div>
     `;
 
     const meaningEl = card.querySelector('.meaning');
     if (meaningEl) meaningEl.insertAdjacentElement('afterend', block);
     else card.appendChild(block);
     card.setAttribute(ENHANCED_ATTR, '1');
+  }
+
+  function revealLearningSteps(button) {
+    const card = button.closest('.card');
+    if (!card) return;
+    setTimeout(function () {
+      const meaning = card.querySelector('.meaning');
+      const block = card.querySelector('.v2-example');
+      if (meaning && !meaning.classList.contains('hidden') && block) block.classList.remove('hidden');
+    }, 80);
   }
 
   function saveProgress() {
@@ -161,9 +198,34 @@
     }, 120);
   }
 
+  function rememberQuizWrong(id, label) {
+    if (!id) return;
+    let arr = [];
+    try { arr = JSON.parse(localStorage.getItem(QUIZ_REVIEW_KEY) || '[]'); } catch (_) { arr = []; }
+    const now = Date.now();
+    const existing = arr.find(x => String(x.id) === String(id));
+    if (existing) { existing.count = (existing.count || 1) + 1; existing.last = now; existing.label = label || existing.label; }
+    else arr.push({ id: String(id), label: label || '', count: 1, last: now });
+    localStorage.setItem(QUIZ_REVIEW_KEY, JSON.stringify(arr.slice(-300)));
+  }
+
+  function enhanceQuizResult() {
+    const title = cleanText(document.querySelector('.title')?.textContent || '');
+    if (!title.includes('نتيجة الاختبار')) return;
+    const card = document.querySelector('.card');
+    if (!card || card.querySelector('[data-v2-review-wrong]')) return;
+    const wrongs = (() => { try { return JSON.parse(localStorage.getItem(QUIZ_REVIEW_KEY) || '[]'); } catch (_) { return []; } })();
+    if (!wrongs.length) return;
+    const box = document.createElement('div');
+    box.className = 'v2-quiz-review';
+    box.innerHTML = `<p><b>الكلمات التي تحتاج مراجعة:</b> ${wrongs.length}</p><button class="btn amber" data-go="hard" data-v2-review-wrong>راجع أخطائي الآن</button>`;
+    card.appendChild(box);
+  }
+
   function enhancePage() {
     document.querySelectorAll('.card').forEach(enhanceCard);
     addResumeTile();
+    enhanceQuizResult();
     saveProgress();
   }
 
@@ -175,6 +237,29 @@
       resumeProgress();
       return;
     }
+
+    const showBtn = event.target.closest('[data-v2-show]');
+    if (showBtn) {
+      const card = showBtn.closest('.card');
+      if (showBtn.dataset.v2Show === 'example') {
+        card?.querySelector('.v2-example-body')?.classList.remove('hidden');
+        showBtn.classList.add('hidden');
+      }
+      if (showBtn.dataset.v2Show === 'translation') {
+        card?.querySelector('.v2-translation')?.classList.remove('hidden');
+        showBtn.classList.add('hidden');
+      }
+      return;
+    }
+
+    const meaningBtn = event.target.closest('[data-toggle-next]');
+    if (meaningBtn) revealLearningSteps(meaningBtn);
+
+    const answer = event.target.closest('[data-answer]');
+    if (answer && answer.dataset.answer !== answer.dataset.real) {
+      rememberQuizWrong(answer.dataset.id, answer.dataset.real || answer.textContent || '');
+    }
+
     const cardMove = event.target.closest('[data-card], [data-master], [data-answer]');
     if (cardMove) setTimeout(saveProgress, 250);
   }, true);
