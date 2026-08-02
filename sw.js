@@ -1,5 +1,5 @@
-const CACHE='qamoosi-pwa-v13';
-const ASSETS=['./','./index.html','./styles.css?v=13','./excel-import.css?v=13','./backup-tools.css?v=13','./app.js?v=13','./v2-learning.js?v=13','./excel-import.js?v=13','./backup-tools.js?v=13','./import-refresh.js?v=13','./ios-fixes.js?v=13','./manifest.webmanifest','./assets/data/words.json','./icons/icon-192.svg','./icons/icon-512.svg'];
+const CACHE='qamoosi-pwa-v14';
+const ASSETS=['./','./index.html','./styles.css?v=14','./excel-import.css?v=14','./backup-tools.css?v=14','./app.js?v=14','./v2-learning.js?v=14','./excel-import-v14.js?v=14','./backup-tools.js?v=14','./import-refresh.js?v=14','./ios-fixes.js?v=14','./manifest.webmanifest','./assets/data/words.json','./icons/icon-192.svg','./icons/icon-512.svg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
