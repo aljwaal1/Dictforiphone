@@ -1,4 +1,4 @@
-// Robust Excel import for Qamoosi School PWA v14
+// Robust Excel import for Qamoosi School PWA v15
 (function () {
   'use strict';
   const STORE = 'qamoosi_school_pwa_v2';
@@ -79,7 +79,7 @@
     btn.className = 'tile excel-import-tile';
     btn.type = 'button';
     btn.dataset.excelImport = '1';
-    btn.innerHTML = '<div class="ico">📥</div><b>استيراد Excel</b><span>إضافة كلمات من ملف</span>';
+    btn.innerHTML = '<div class="ico">📥</div><b>استيراد Excel</b><span>إضافة كلمات وجمل من ملف</span>';
     grid.appendChild(btn);
   }
 
@@ -95,7 +95,7 @@
           <p class="muted">يدعم التطبيق العناوين التالية كما هي في ملفك:</p>
           <div class="excel-format">الصف<br>الكلمة<br>المعنى العربي<br>جملة مثال<br>ترجمة الجملة</div>
           <input id="excelFileInput" type="file" accept=".xlsx,.xls,.csv" />
-          <p class="muted">كل كلمة تكون في صف مستقل، ويمكن للملف أن يحتوي على آلاف الصفوف.</p>
+          <p class="muted">كل كلمة تكون في صف مستقل، وتُحفظ الجملة الإنجليزية وترجمتها مع الكلمة.</p>
           ${message ? `<div class="excel-message">${esc(message)}</div>` : ''}
         </div>
         <div id="excelPreview"></div>
@@ -118,15 +118,21 @@
       const gradeRaw = getValue(row, ['الصف', 'الصف الدراسي', 'grade', 'grade level', 'class']);
       const word = getValue(row, ['الكلمة', 'الكلمة الإنجليزية', 'الكلمة الانجليزية', 'english word', 'word_en', 'word']);
       const meaning = getValue(row, ['المعنى العربي', 'المعنى بالعربية', 'المعنى', 'meaning_ar', 'meaning']);
-      const sentence = getValue(row, ['جملة مثال', 'مثال من الكتاب', 'الجملة الإنجليزية', 'الجملة الانجليزية', 'sentence_en', 'example sentence', 'example']);
-      const translation = getValue(row, ['ترجمة الجملة', 'ترجمة المثال إلى العربية', 'ترجمة المثال الى العربية', 'sentence_ar', 'translation']);
+      const sentence = getValue(row, ['جملة مثال', 'مثال جملة', 'مثال من الكتاب', 'الجملة الإنجليزية', 'الجملة الانجليزية', 'الجملة', 'sentence_en', 'example_en', 'example sentence', 'example', 'sentence']);
+      const translation = getValue(row, ['ترجمة الجملة', 'ترجمة المثال', 'ترجمة المثال إلى العربية', 'ترجمة المثال الى العربية', 'sentence_ar', 'example_ar', 'translation', 'sentence_translation']);
+      const sentenceEn = clean(sentence);
+      const sentenceAr = clean(translation);
       return {
         id: `excel_${stamp}_${index}`,
         grade: normalizeGrade(gradeRaw),
         word_en: clean(word),
         meaning_ar: clean(meaning),
-        sentence_en: clean(sentence),
-        sentence_ar: clean(translation),
+        sentence_en: sentenceEn,
+        example_en: sentenceEn,
+        example: sentenceEn,
+        sentence_ar: sentenceAr,
+        example_ar: sentenceAr,
+        translation: sentenceAr,
         source: `excel-import:${sheetName}`
       };
     }).filter(item => item.word_en && item.meaning_ar && item.grade);
@@ -141,17 +147,21 @@
     const state = readState();
     const current = state.customWords || [];
     const duplicateCount = items.filter(item => current.some(w => String(w.grade) === String(item.grade) && clean(w.word_en).toLowerCase() === clean(item.word_en).toLowerCase())).length;
+    const sentenceCount = items.filter(x => x.sentence_en).length;
+    const translationCount = items.filter(x => x.sentence_ar).length;
     const grades = [...new Set(items.map(x => gradeName(x.grade)))].join('، ');
-    const rows = items.slice(0, 10).map(item => `<div class="excel-preview-row"><b class="ltr">${esc(item.word_en)}</b><span>${esc(item.meaning_ar)}</span><small>${esc(gradeName(item.grade))}</small></div>`).join('');
+    const rows = items.slice(0, 10).map(item => `<div class="excel-preview-row"><b class="ltr">${esc(item.word_en)}</b><span>${esc(item.meaning_ar)}</span>${item.sentence_en ? `<small class="ltr">${esc(item.sentence_en)}</small>` : ''}${item.sentence_ar ? `<small>${esc(item.sentence_ar)}</small>` : ''}<small>${esc(gradeName(item.grade))}</small></div>`).join('');
     box.innerHTML = `
       <div class="card excel-preview-card">
         <h3>معاينة قبل الحفظ</h3>
         <p>إجمالي صفوف الملف: <b>${totalRows}</b></p>
         <p>الكلمات الصالحة: <b>${items.length}</b></p>
+        <p>الجمل الإنجليزية: <b>${sentenceCount}</b></p>
+        <p>ترجمات الجمل: <b>${translationCount}</b></p>
         <p>المكررة داخل التطبيق: <b>${duplicateCount}</b></p>
         <p>الصفوف: <b>${esc(grades || '-')}</b></p>
         <div class="excel-preview-list">${rows || '<div class="empty">لم يتم التعرف على كلمات صالحة. تأكد من وجود الصف والكلمة والمعنى العربي في الصف الأول.</div>'}</div>
-        <button class="btn green" data-excel-save="merge" ${items.length ? '' : 'disabled'}>حفظ / تحديث الكلمات</button>
+        <button class="btn green" data-excel-save="merge" ${items.length ? '' : 'disabled'}>حفظ / تحديث الكلمات والجمل</button>
         <button class="btn red" style="margin-top:10px" data-excel-save="replace-grade" ${items.length ? '' : 'disabled'}>استبدال كلمات نفس الصف</button>
       </div>`;
   }
@@ -191,8 +201,8 @@
     state.customWords = list;
     cleanProgressForExistingWords(state);
     saveState(state);
-    localStorage.setItem('qamoosi_last_import', JSON.stringify({ added, updated, total: parsedRows.length, at: Date.now() }));
-    renderImportPage(`تم الحفظ بنجاح: أضيفت ${added} كلمة وتم تحديث ${updated} كلمة. ستتحدث جميع الأقسام الآن.`);
+    localStorage.setItem('qamoosi_last_import', JSON.stringify({ added, updated, total: parsedRows.length, sentences: parsedRows.filter(x => x.sentence_en).length, at: Date.now() }));
+    renderImportPage(`تم الحفظ بنجاح: أضيفت ${added} كلمة وتم تحديث ${updated} كلمة، وحُفظت الجمل الإنجليزية وترجماتها.`);
     const preview = document.getElementById('excelPreview');
     if (preview) preview.innerHTML = '<div class="card"><button class="btn green" onclick="location.reload()">فتح التطبيق بالبيانات الجديدة</button></div>';
   }
