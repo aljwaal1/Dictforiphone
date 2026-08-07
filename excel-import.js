@@ -81,7 +81,7 @@
     btn.className = 'tile excel-import-tile';
     btn.type = 'button';
     btn.setAttribute('data-excel-import', '1');
-    btn.innerHTML = '<div class="ico">📥</div><b>استيراد Excel</b><span>إضافة كلمات من ملف</span>';
+    btn.innerHTML = '<div class="ico">📥</div><b>استيراد Excel</b><span>إضافة كلمات وجمل من ملف</span>';
     grid.appendChild(btn);
   }
 
@@ -96,14 +96,14 @@
         <div class="card">
           <p class="muted">ارفع ملف Excel بنفس التنسيق:</p>
           <div class="excel-format">
-            الصف الدراسي<br>
-            الكلمة الإنجليزية<br>
-            المعنى بالعربية<br>
-            مثال من الكتاب<br>
-            ترجمة المثال إلى العربية
+            الصف<br>
+            الكلمة<br>
+            المعنى العربي<br>
+            جملة مثال<br>
+            ترجمة الجملة
           </div>
           <input id="excelFileInput" type="file" accept=".xlsx,.xls" />
-          <p class="muted">سيتم حفظ الكلمات داخل هذا الجهاز، ثم تظهر في البطاقات والاختبار بعد إعادة تحميل التطبيق.</p>
+          <p class="muted">سيتم حفظ الكلمات والجمل والترجمات داخل هذا الجهاز، وتظهر في البطاقات والقاموس والجمل التعليمية.</p>
           ${message ? `<div class="excel-message">${esc(message)}</div>` : ''}
         </div>
         <div id="excelPreview"></div>
@@ -126,28 +126,33 @@
     await ensureXlsx();
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    const allRows = [];
+    workbook.SheetNames.forEach(sheetName => {
+      const sheet = workbook.Sheets[sheetName];
+      XLSX.utils.sheet_to_json(sheet, { defval: '' }).forEach(row => allRows.push(row));
+    });
 
-    const normalized = rows.map((row, index) => {
+    const normalized = allRows.map((row, index) => {
       const gradeRaw = getValue(row, ['الصف الدراسي', 'الصف', 'grade']);
-      const word = getValue(row, ['الكلمة الإنجليزية', 'الكلمة الانجليزية', 'English word', 'word_en', 'word']);
-      const meaning = getValue(row, ['المعنى بالعربية', 'المعنى العربي', 'meaning_ar', 'meaning']);
-      const sentence = getValue(row, ['مثال من الكتاب', 'الجملة الإنجليزية', 'الجملة الانجليزية', 'sentence_en', 'example']);
-      const translation = getValue(row, ['ترجمة المثال إلى العربية', 'ترجمة المثال الى العربية', 'ترجمة الجملة', 'sentence_ar', 'translation']);
+      const word = getValue(row, ['الكلمة الإنجليزية', 'الكلمة الانجليزية', 'الكلمة', 'English word', 'word_en', 'word']);
+      const meaning = getValue(row, ['المعنى بالعربية', 'المعنى العربي', 'المعنى', 'meaning_ar', 'meaning']);
+      const sentence = getValue(row, ['جملة مثال', 'مثال جملة', 'مثال من الكتاب', 'الجملة الإنجليزية', 'الجملة الانجليزية', 'الجملة', 'sentence_en', 'example_en', 'example', 'sentence']);
+      const translation = getValue(row, ['ترجمة الجملة', 'ترجمة المثال', 'ترجمة المثال إلى العربية', 'ترجمة المثال الى العربية', 'sentence_ar', 'example_ar', 'translation', 'sentence_translation']);
       return {
         id: 'excel_' + Date.now() + '_' + index,
         grade: normalizeGrade(gradeRaw),
         word_en: word,
         meaning_ar: meaning,
         sentence_en: sentence,
+        example_en: sentence,
         sentence_ar: translation,
+        example_ar: translation,
         source: 'excel-import'
       };
     }).filter(x => x.word_en && x.meaning_ar);
 
     parsedRows = normalized;
-    renderPreview(normalized, rows.length);
+    renderPreview(normalized, allRows.length);
   }
 
   function renderPreview(items, totalRows) {
@@ -156,11 +161,15 @@
     const state = readState();
     const current = state.customWords || [];
     const duplicateCount = items.filter(item => current.some(w => String(w.grade) === String(item.grade) && clean(w.word_en).toLowerCase() === clean(item.word_en).toLowerCase())).length;
+    const sentenceCount = items.filter(item => clean(item.sentence_en)).length;
+    const translationCount = items.filter(item => clean(item.sentence_ar)).length;
     const grades = [...new Set(items.map(x => gradeName(x.grade)))].join('، ');
     const previewRows = items.slice(0, 10).map(item => `
       <div class="excel-preview-row">
         <b class="ltr">${esc(item.word_en)}</b>
         <span>${esc(item.meaning_ar)}</span>
+        ${item.sentence_en ? `<small class="ltr">${esc(item.sentence_en)}</small>` : ''}
+        ${item.sentence_ar ? `<small>${esc(item.sentence_ar)}</small>` : ''}
         <small>${esc(gradeName(item.grade))}</small>
       </div>
     `).join('');
@@ -170,10 +179,12 @@
         <h3>معاينة قبل الحفظ</h3>
         <p>إجمالي صفوف الملف: <b>${totalRows}</b></p>
         <p>الكلمات الصالحة: <b>${items.length}</b></p>
+        <p>الجمل الإنجليزية: <b>${sentenceCount}</b></p>
+        <p>ترجمات الجمل: <b>${translationCount}</b></p>
         <p>المكررة داخل التطبيق: <b>${duplicateCount}</b></p>
         <p>الصفوف: <b>${esc(grades || '-')}</b></p>
         <div class="excel-preview-list">${previewRows || '<div class="empty">لا توجد كلمات صالحة</div>'}</div>
-        <button class="btn green" data-excel-save="merge">حفظ / تحديث الكلمات</button>
+        <button class="btn green" data-excel-save="merge">حفظ / تحديث الكلمات والجمل</button>
         <button class="btn red" style="margin-top:10px" data-excel-save="replace-grade">استبدال كلمات نفس الصف</button>
       </div>
     `;
@@ -204,7 +215,8 @@
 
     state.customWords = list;
     saveState(state);
-    renderImportPage(`تم الحفظ بنجاح. أضيفت ${added} كلمة، وتم تحديث ${updated} كلمة.`);
+    window.dispatchEvent(new CustomEvent('qamoosi-data-imported', { detail: { added, updated, sentences: parsedRows.filter(x => x.sentence_en).length } }));
+    renderImportPage(`تم الحفظ بنجاح. أضيفت ${added} كلمة، وتم تحديث ${updated} كلمة. تم حفظ الجمل الإنجليزية وترجماتها أيضاً.`);
     const preview = document.getElementById('excelPreview');
     if (preview) preview.innerHTML = '<div class="card"><button class="btn green" onclick="location.reload()">تحديث التطبيق الآن</button></div>';
   }
@@ -218,18 +230,25 @@
 
   function applyImportedSentences() {
     document.querySelectorAll('.card[data-v2-enhanced="1"]').forEach(card => {
-      if (card.getAttribute('data-excel-sentence-applied') === '1') return;
       const speakBtn = card.querySelector('[data-speak]');
       const word = clean(speakBtn?.dataset?.speak || speakBtn?.textContent || '');
       const meaning = clean(card.querySelector('.meaning')?.textContent || '');
       const match = findImportedWord(word, meaning);
-      if (!match || !match.sentence_en) return;
+      if (!match) return;
+      const sentenceText = clean(match.sentence_en || match.example_en || match.example || '');
+      const translationText = clean(match.sentence_ar || match.example_ar || match.translation || '');
+      if (!sentenceText && !translationText) return;
+      const block = card.querySelector('.v2-example');
+      if (block) block.classList.remove('hidden');
       const sentence = card.querySelector('.v2-sentence');
       const speak = card.querySelector('.v2-speak');
       const translation = card.querySelector('.v2-translation');
-      if (sentence) sentence.textContent = match.sentence_en;
-      if (speak) speak.dataset.speak = match.sentence_en;
-      if (translation && match.sentence_ar) translation.textContent = match.sentence_ar;
+      if (sentence && sentenceText) sentence.textContent = sentenceText;
+      if (speak && sentenceText) {
+        speak.dataset.speak = sentenceText;
+        speak.textContent = '🔊 لفظ الجملة';
+      }
+      if (translation && translationText) translation.textContent = translationText;
       card.setAttribute('data-excel-sentence-applied', '1');
     });
   }
@@ -244,9 +263,7 @@
     }
 
     const saveBtn = event.target.closest('[data-excel-save]');
-    if (saveBtn) {
-      saveImported(saveBtn.dataset.excelSave);
-    }
+    if (saveBtn) saveImported(saveBtn.dataset.excelSave);
   }, true);
 
   document.addEventListener('change', event => {
@@ -256,6 +273,8 @@
       parseExcelFile(file).catch(err => renderImportPage(err.message || 'تعذر قراءة الملف'));
     }
   }, true);
+
+  window.addEventListener('qamoosi-data-imported', () => setTimeout(applyImportedSentences, 100));
 
   const observer = new MutationObserver(() => {
     requestAnimationFrame(() => {
