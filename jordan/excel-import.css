@@ -1,0 +1,8 @@
+.excel-import-tile{border-color:#bbf7d0;background:linear-gradient(180deg,#ffffff,#f0fdf4)}
+.excel-format{background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px;line-height:1.9;font-weight:800;margin:10px 0}
+.excel-message{background:#dcfce7;color:#166534;border-radius:16px;padding:12px;margin-top:12px;font-weight:900;text-align:center}
+.excel-preview-card h3{margin:0 0 10px}
+.excel-preview-list{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.excel-preview-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:10px}
+.excel-preview-row small{color:var(--muted);font-weight:800}
+.excel-preview-row b{font-size:15px}
