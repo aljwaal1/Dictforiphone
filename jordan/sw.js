@@ -1,6 +1,6 @@
-const CACHE='jordan-school-dictionary-pwa-v19';
+const CACHE='jordan-school-dictionary-pwa-v20';
 const PREFIX='jordan-school-dictionary-pwa-';
-const ASSETS=['./','./index.html','./styles.css?v=19','./excel-import.css?v=19','./backup-tools.css?v=19','./jordan-pwa.css?v=19','./app.js?v=19','./v2-learning.js?v=19','./excel-import-v14.js?v=19','./backup-tools.js?v=19','./import-refresh.js?v=19','./ios-fixes.js?v=19','./sentence-display-v15.js?v=19','./jordan-pwa.js?v=19','./manifest.webmanifest','./assets/data/words.json','./icons/icon-192.svg','./icons/icon-512.svg'];
+const ASSETS=['./','./index.html','./styles.css?v=20','./jordan-pwa.css?v=20','./jordan-pwa.js?v=20','./manifest.webmanifest?v=20','./assets/data/words.json','./icons/icon-192.svg','./icons/icon-512.svg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))))});
