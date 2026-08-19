@@ -1,0 +1,31 @@
+name: Verify Published Jordan PWA
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "jordan/**"
+      - ".github/workflows/verify-jordan-pwa-main.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: JavaScript syntax
+        run: node --check jordan/jordan-pwa-v22.js && node --check jordan/sw.js
+      - name: Manifest JSON
+        run: python3 -m json.tool jordan/manifest.webmanifest >/dev/null
+      - name: Required files
+        run: |
+          test -s jordan/index.html
+          test -s jordan/jordan-pwa-v22.js
+          test -s jordan/sw.js
+          grep -q 'jordan-pwa-v22.js?v=22' jordan/index.html
+          grep -q 'jordan-school-dictionary-pwa-v22' jordan/sw.js
+          grep -q 'GlobalWorkerOptions.workerSrc' jordan/index.html
+          grep -q 'fillMeanings' jordan/jordan-pwa-v22.js
