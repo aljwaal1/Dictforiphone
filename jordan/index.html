@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="القاموس الأردني" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <link rel="manifest" href="manifest.webmanifest?v=23" />
+  <link rel="manifest" href="manifest.webmanifest?v=24" />
   <link rel="apple-touch-icon" href="icons/icon-192.svg" />
-  <link rel="stylesheet" href="styles.css?v=23" />
-  <link rel="stylesheet" href="jordan-pwa.css?v=23" />
+  <link rel="stylesheet" href="styles.css?v=24" />
+  <link rel="stylesheet" href="jordan-pwa.css?v=24" />
   <title>القاموس المدرسي الأردني</title>
 </head>
 <body>
@@ -22,12 +22,13 @@
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
   </script>
-  <script src="jordan-pwa-v22.js?v=23"></script>
-  <script src="jordan-fixes-v23.js?v=23"></script>
+  <script src="jordan-pwa-v22.js?v=24"></script>
+  <script src="jordan-fixes-v23.js?v=24"></script>
+  <script src="jordan-booklab-v24.js?v=24"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=23', { scope: './' }).catch(console.error);
+        navigator.serviceWorker.register('./sw.js?v=24', { scope: './' }).catch(console.error);
       });
     }
   </script>
