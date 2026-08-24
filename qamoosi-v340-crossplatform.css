@@ -1,0 +1,57 @@
+:root{
+  --q340-purple:#7c3aed;--q340-cyan:#0891b2;--q340-rose:#e11d48;--q340-lime:#65a30d;
+  --q340-indigo:#4f46e5;--q340-orange:#ea580c;--q340-soft:#f8fafc;
+}
+
+/* Qamoosi AI v3.4 — one codebase for iPhone + desktop */
+body{background:linear-gradient(160deg,#eef7ff 0%,#f8f5ff 48%,#fff7ed 100%);}
+.hero{background:linear-gradient(135deg,#2563eb 0%,#7c3aed 52%,#0891b2 100%);}
+.tile{position:relative;overflow:hidden;border-width:1px;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;}
+.tile:before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:5px;border-radius:999px;background:var(--blue);}
+.tile:nth-child(6n+1):before{background:#2563eb}.tile:nth-child(6n+2):before{background:var(--q340-purple)}.tile:nth-child(6n+3):before{background:var(--q340-cyan)}.tile:nth-child(6n+4):before{background:var(--q340-orange)}.tile:nth-child(6n+5):before{background:var(--green)}.tile:nth-child(6n):before{background:var(--q340-rose)}
+.tile:nth-child(6n+1) .ico{background:#dbeafe}.tile:nth-child(6n+2) .ico{background:#ede9fe}.tile:nth-child(6n+3) .ico{background:#cffafe}.tile:nth-child(6n+4) .ico{background:#ffedd5}.tile:nth-child(6n+5) .ico{background:#dcfce7}.tile:nth-child(6n) .ico{background:#ffe4e6}
+.chip{background:linear-gradient(135deg,#eff6ff,#ede9fe);color:#4338ca;border:1px solid #ddd6fe;}
+
+.btn{background:linear-gradient(135deg,#2563eb,#4f46e5)}
+.btn.alt{background:#eef6ff;color:#1d4ed8;border:1px solid #dbeafe}.btn.green{background:linear-gradient(135deg,#16a34a,#059669)}.btn.amber{background:linear-gradient(135deg,#f59e0b,#ea580c)}.btn.red{background:linear-gradient(135deg,#ef4444,#e11d48)}
+
+/* Flashcards: keep the complete learning flow inside one viewport. */
+.q340-learning-screen{overflow:hidden}
+.q340-learning-screen .wrap{height:100dvh;min-height:0;overflow:hidden;padding-bottom:calc(68px + env(safe-area-inset-bottom));display:flex;flex-direction:column;}
+.q340-learning-screen .top{flex:0 0 auto;padding-top:4px;padding-bottom:4px}
+.q340-learning-screen .title{margin:7px 0 5px;font-size:clamp(18px,4.5vw,23px)}
+.q340-learning-screen .card{flex:1 1 auto;min-height:0;overflow:hidden;margin-top:4px;padding:clamp(8px,1.8vh,14px);border-radius:22px;display:flex;flex-direction:column;justify-content:flex-start;gap:clamp(4px,1vh,9px)}
+.q340-learning-screen .word{font-size:clamp(28px,7vh,46px);line-height:1.05;margin:0}
+.q340-learning-screen .meaning{font-size:clamp(18px,3.4vh,27px);line-height:1.15;margin:0}
+.q340-learning-screen .btn{min-height:clamp(40px,6.3vh,50px);padding:clamp(8px,1.4vh,12px) 12px;font-size:clamp(13px,2.1vh,16px)}
+.q340-learning-screen .row{gap:6px;flex-wrap:nowrap}
+.q340-learning-screen .row>.btn{flex:1;min-width:0;padding-inline:7px}
+.q340-learning-screen .v2-example{margin-top:4px;padding-top:5px}
+.q340-learning-screen .v2-label{margin-bottom:3px;padding:4px 8px}
+.q340-learning-screen .v2-sentence{font-size:clamp(15px,2.6vh,21px);line-height:1.2;margin:3px 0 5px}
+.q340-learning-screen .v2-speak{margin-bottom:5px}
+.q340-learning-screen .v2-translation{font-size:clamp(14px,2.4vh,18px);line-height:1.2;padding:6px 8px}
+.q340-learning-screen .bar{height:7px}
+.q340-learning-screen .ad{height:26px;min-height:26px;margin:2px 0;font-size:10px}
+
+/* Desktop uses the extra width instead of stretching a phone layout. */
+@media(min-width:900px){
+  .wrap{max-width:1180px;padding-inline:24px}
+  .grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+  .tile{min-height:126px;padding:20px}
+  .q340-learning-screen .wrap{max-width:980px}
+  .q340-learning-screen .card{max-width:880px;width:100%;align-self:center;padding:18px 26px}
+  .q340-learning-screen .word{font-size:48px}
+  .q340-learning-screen .v2-sentence{font-size:22px}
+  .q340-learning-screen .row>.btn{max-width:none}
+}
+
+@media(max-height:700px){
+  .q340-learning-screen .top{padding-block:2px}
+  .q340-learning-screen .ad{display:none}
+  .q340-learning-screen .card{padding:7px 10px;gap:3px}
+  .q340-learning-screen .word{font-size:30px}
+  .q340-learning-screen .btn{min-height:38px;padding-block:7px}
+  .q340-learning-screen .v2-sentence{font-size:15px}
+  .q340-learning-screen .v2-translation{font-size:14px;padding:5px}
+}
