@@ -34,6 +34,22 @@ body{background:linear-gradient(160deg,#eef7ff 0%,#f8f5ff 48%,#fff7ed 100%);}
 .q340-learning-screen .bar{height:7px}
 .q340-learning-screen .ad{height:26px;min-height:26px;margin:2px 0;font-size:10px}
 
+/* Bottom navigation: stronger contrast and clear color identity on iPhone. */
+.nav{background:rgba(255,255,255,.97);border-top:1px solid #dbe5f2;box-shadow:0 -10px 28px rgba(15,23,42,.12);gap:6px;padding-inline:8px}
+.nav button{font-weight:800;color:#475569;background:#f8fafc;border:1px solid #e2e8f0;min-width:58px;padding:7px 9px;opacity:1}
+.nav button:nth-child(5n+1){color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe}
+.nav button:nth-child(5n+2){color:#6d28d9;background:#f5f3ff;border-color:#ddd6fe}
+.nav button:nth-child(5n+3){color:#0f766e;background:#ecfeff;border-color:#a5f3fc}
+.nav button:nth-child(5n+4){color:#c2410c;background:#fff7ed;border-color:#fed7aa}
+.nav button:nth-child(5n){color:#be123c;background:#fff1f2;border-color:#fecdd3}
+.nav button.on{color:#fff!important;border-color:transparent!important;box-shadow:0 7px 18px rgba(37,99,235,.24);transform:translateY(-2px)}
+.nav button:nth-child(5n+1).on{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
+.nav button:nth-child(5n+2).on{background:linear-gradient(135deg,#7c3aed,#6d28d9)}
+.nav button:nth-child(5n+3).on{background:linear-gradient(135deg,#0891b2,#0f766e)}
+.nav button:nth-child(5n+4).on{background:linear-gradient(135deg,#f97316,#ea580c)}
+.nav button:nth-child(5n).on{background:linear-gradient(135deg,#e11d48,#be123c)}
+@media(max-width:430px){.nav{gap:4px}.nav button{min-width:0;flex:1;font-size:11.5px;padding-inline:5px}}
+
 /* Desktop uses the extra width instead of stretching a phone layout. */
 @media(min-width:900px){
   .wrap{max-width:1180px;padding-inline:24px}
