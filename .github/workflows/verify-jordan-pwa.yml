@@ -20,9 +20,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply v349 source polish for verification
+      - name: Apply baseline for verification
         if: github.event_name != 'pull_request'
         run: python3 tool/upgrade_pwa_v349_identity_extract.py
+      - name: Apply v350 PDF QA for verification
+        if: github.event_name != 'pull_request'
+        run: python3 tool/upgrade_pwa_v350_pdf_qa.py
       - name: JavaScript syntax
         run: |
           node --check jordan-pwa.js
@@ -35,6 +38,8 @@ jobs:
           node --check sentence-display-v15.js
           node --check easy-english-v345-patch.js
           node --check sw.js
+      - name: Functional regression checks
+        run: python3 tool/qa_pwa_v350.py
       - name: Manifest JSON
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest ok')"
       - name: Required files and references
@@ -44,21 +49,12 @@ jobs:
           test -s jordan-pwa.css
           test -s manifest.webmanifest
           test -s sw.js
-          grep -q 'jordan-pwa.css' index.html
-          grep -q 'jordan-pwa.js' index.html
-          grep -q 'manifest.webmanifest' index.html
-          grep -q 'jordan-pwa.js' sw.js
-          grep -q 'jordan-pwa.css' sw.js
           grep -q 'Easy English AI' jordan-pwa.js
           grep -q 'استوديو AI للكتاب' jordan-pwa.js
           ! grep -q 'القاموس المدرسي الأردني' jordan-pwa.js
-          grep -q 'l.length<2' jordan-pwa.js
-          grep -q 'const PROPER=' jordan-pwa.js
-          grep -q 'const key=raw.toLowerCase()' jordan-pwa.js
-          grep -Fq 'const list=[...map.values()];' jordan-pwa.js
-          grep -q 'easy-english-ai-pwa-v349-polish' sw.js
-          grep -q 'jordan-pwa.js?v=349' index.html
-          grep -q 'sw.js?v=349' index.html
+          grep -q 'easy-english-ai-pwa-v350-functional-qa' sw.js
+          grep -q 'jordan-pwa.js?v=350' index.html
+          grep -q 'sw.js?v=350' index.html
       - name: PWA requirements
         run: |
           node - <<'NODE'
