@@ -58,6 +58,7 @@ jobs:
           grep -Fq 'const list=[...map.values()];' jordan-pwa.js
           grep -q 'easy-english-ai-pwa-v349-polish' sw.js
           grep -q 'jordan-pwa.js?v=349' index.html
+          grep -q 'sw.js?v=349' index.html
       - name: PWA requirements
         run: |
           node - <<'NODE'
