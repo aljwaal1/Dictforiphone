@@ -3,49 +3,44 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#1769e0" />
+  <meta name="theme-color" content="#0ea5e9" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Easy English AI" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <link rel="manifest" href="manifest.webmanifest?v=26" />
+  <link rel="manifest" href="manifest.webmanifest?v=348" />
   <link rel="apple-touch-icon" href="icons/icon-192.svg" />
-  <link rel="stylesheet" href="styles.css?v=25" />
-  <link rel="stylesheet" href="jordan-pwa.css?v=25" />
-  <link rel="stylesheet" href="easy-english-live-v26.css?v=26" />
+  <link rel="stylesheet" href="styles.css?v=18" />
+  <link rel="stylesheet" href="excel-import.css?v=18" />
+  <link rel="stylesheet" href="backup-tools.css?v=18" />
+  <link rel="stylesheet" href="jordan-pwa.css?v=18" />
+  <link rel="stylesheet" href="easy-english-v344.css?v=344" />
+  <link rel="stylesheet" href="easy-english-v345-patch.css?v=348" />
   <title>Easy English AI</title>
+  <script>
+    try {
+      document.title = 'Easy English AI';
+      localStorage.setItem('easy_english_ai_prep_v344', '1');
+    } catch (_) {}
+  </script>
 </head>
 <body>
   <div id="app"></div>
-  <script>
-    (async()=>{
-      const q=new URLSearchParams(location.search);
-      if(q.get('v')==='26'&&q.get('fresh')!=='1'&&'serviceWorker' in navigator){
-        try{
-          const regs=await navigator.serviceWorker.getRegistrations();
-          await Promise.all(regs.filter(r=>r.scope.includes('/Dictforiphone/jordan/')).map(r=>r.unregister()));
-          q.set('fresh','1');
-          location.replace(location.pathname+'?'+q.toString());
-        }catch(e){}
-      }
-    })();
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    if (window.pdfjsLib) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    }
-  </script>
-  <script src="jordan-pwa-v22.js?v=25"></script>
-  <script src="jordan-fixes-v23.js?v=25"></script>
-  <script src="jordan-booklab-v24.js?v=25"></script>
-  <script src="jordan-v25-bootfix.js?v=25"></script>
-  <script src="easy-english-live-v26.js?v=26"></script>
+  <script src="app.js?v=18"></script>
+  <script src="v2-learning.js?v=18"></script>
+  <script src="excel-import-v14.js?v=18"></script>
+  <script src="backup-tools.js?v=18"></script>
+  <script src="import-refresh.js?v=18"></script>
+  <script src="ios-fixes.js?v=18"></script>
+  <script src="sentence-display-v15.js?v=18"></script>
+  <script src="jordan-pwa.js?v=18"></script>
+  <script src="easy-english-v344.js?v=344"></script>
+  <script src="easy-english-v345-patch.js?v=348"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=26', { scope: './' }).catch(console.error);
-      });
+        navigator.serviceWorker.register('./sw.js?v=348', { scope: './' }).catch(() => {});
+      }, { once: true });
     }
   </script>
 </body>
