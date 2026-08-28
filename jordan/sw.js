@@ -1,4 +1,4 @@
-const CACHE='easy-english-ai-pwa-v350-functional-qa';
+const CACHE='easy-english-ai-pwa-v351-content';
 const ASSETS=['./','./index.html','./styles.css?v=18','./excel-import.css?v=18','./backup-tools.css?v=18','./jordan-pwa.css?v=18','./easy-english-v344.css?v=344','./easy-english-v345-patch.css?v=351','./app.js?v=18','./v2-learning.js?v=18','./excel-import-v14.js?v=18','./backup-tools.js?v=18','./import-refresh.js?v=18','./ios-fixes.js?v=18','./sentence-display-v15.js?v=18','./jordan-pwa.js?v=351','./easy-english-v344.js?v=344','./easy-english-v345-patch.js?v=351','./manifest.webmanifest?v=351','./assets/data/words.json','./icons/icon-192.svg','./icons/icon-512.svg'];
 const STATIC_PATHS=new Set(ASSETS.map(x=>new URL(x,self.location.href).pathname));
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
