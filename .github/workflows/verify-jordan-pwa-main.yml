@@ -1,4 +1,4 @@
-name: Verify Published Jordan PWA
+name: Verify Published Easy English AI PWA
 
 on:
   push:
@@ -17,15 +17,23 @@ jobs:
         with:
           node-version: "22"
       - name: JavaScript syntax
-        run: node --check jordan/jordan-pwa-v22.js && node --check jordan/sw.js
+        run: |
+          node --check jordan/jordan-pwa-v22.js
+          node --check jordan/easy-english-live-v26.js
+          node --check jordan/sw.js
       - name: Manifest JSON
         run: python3 -m json.tool jordan/manifest.webmanifest >/dev/null
-      - name: Required files
+      - name: Required files and live identity
         run: |
           test -s jordan/index.html
           test -s jordan/jordan-pwa-v22.js
+          test -s jordan/easy-english-live-v26.js
+          test -s jordan/easy-english-live-v26.css
           test -s jordan/sw.js
-          grep -q 'jordan-pwa-v22.js?v=22' jordan/index.html
-          grep -q 'jordan-school-dictionary-pwa-v22' jordan/sw.js
+          grep -q 'Easy English AI' jordan/index.html
+          grep -q 'easy-english-live-v26.js?v=26' jordan/index.html
+          grep -q 'easy-english-live-v26.css?v=26' jordan/index.html
+          grep -q 'easy-english-ai-live-v26' jordan/sw.js
+          grep -q 'Easy English AI' jordan/manifest.webmanifest
           grep -q 'GlobalWorkerOptions.workerSrc' jordan/index.html
           grep -q 'fillMeanings' jordan/jordan-pwa-v22.js
