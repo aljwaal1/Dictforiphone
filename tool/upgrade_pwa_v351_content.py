@@ -35,8 +35,11 @@ app_path.write_text(app,encoding='utf-8')
 pwa=pwa_path.read_text(encoding='utf-8')
 if "const KEY='jordan_school_dictionary_pwa_v1';" in pwa:
     pwa=pwa.replace("const KEY='jordan_school_dictionary_pwa_v1';", "const KEY='easy_english_ai_pwa_v3';const LEGACY_KEYS=['jordan_school_dictionary_pwa_v1','qamoosi_school_pwa_v2'];")
-old_load=re.search(r"function load\(\)\{.*?\}\nfunction speak",pwa,re.S)
-if old_load:
+# Only transform the original synchronous loader. If the async v351 loader already exists,
+# leave it untouched so repeated CI runs cannot produce `async async function load()`.
+if "async function load(){" not in pwa:
+    old_load=re.search(r"(?<!async )function load\(\)\{.*?\}\nfunction speak",pwa,re.S)
+    if not old_load: raise SystemExit('jordan-pwa load() block not found')
     new_load="""async function load(){
   const normalize=(list)=>list.map((w,i)=>({id:w.id||i+1,grade:String(String(w.grade||'')==='KG'?'1':(w.grade||'')),semester:String(w.grade||'')==='KG'?(w.semester||'تمهيدي'):(w.semester||''),unit:w.unit||'',lesson:w.lesson||'',word_en:w.word_en||w.en||w.word||'',meaning_ar:w.meaning_ar||w.ar||w.meaning||'',example_en:w.example_en||w.sentence_en||w.exampleEn||'',example_ar:w.example_ar||w.sentence_ar||w.exampleAr||'',source_page:w.source_page||'',source_name:w.source_name||w.source||''})).filter(w=>w.word_en);
   try{const x=JSON.parse(localStorage.getItem(KEY)||'null');if(x&&Array.isArray(x.words))db=x}catch(e){}
@@ -45,7 +48,6 @@ if old_load:
 }
 function speak"""
     pwa=pwa[:old_load.start()]+new_load+pwa[old_load.end():]
-elif "async function load()" not in pwa: raise SystemExit('jordan-pwa load() block not found')
 if 'load();setTimeout(render,0);' in pwa: pwa=pwa.replace('load();setTimeout(render,0);',"load().then(render).catch(()=>render());",1)
 elif 'load();render();' in pwa: pwa=pwa.replace('load();render();',"load().then(render).catch(()=>render());",1)
 elif 'load().then(render)' not in pwa: raise SystemExit('PWA startup load/render signature not found')
