@@ -1,6 +1,7 @@
 (()=>{
 'use strict';
 const DONE='data-ee346';
+const pendingRoots=new Set();
 let scheduled=false;
 function cleanText(s=''){return String(s).replace(/\s+/g,' ').trim();}
 function renameUi(root=document){
@@ -9,18 +10,21 @@ function renameUi(root=document){
     ['مختبر الكتاب AI','استوديو AI للكتاب'],['مختبر الكتاب','استوديو AI للكتاب'],
     ['القاموس المدرسي الأردني','Easy English AI'],['القاموس الأردني','Easy English AI'],['قاموسي AI','Easy English AI']
   ]);
-  root.querySelectorAll?.('.j-title,h1,h2,h3,p,small,button').forEach(el=>{
+  const nodes=[];
+  if(root.nodeType===1&&root.matches?.('.j-title,h1,h2,h3,p,small,button'))nodes.push(root);
+  root.querySelectorAll?.('.j-title,h1,h2,h3,p,small,button').forEach(el=>nodes.push(el));
+  nodes.forEach(el=>{
     if(el.matches('.ee-suggest-sentence'))return;
     if(el.children.length&&!el.matches('.j-nav button'))return;
     if(el.matches('.j-nav button')){
       const labels={home:'🏠<br>الرئيسية',search:'🔎<br>AI بحث',curriculum:'📚<br>الصفوف',learn:'🎯<br>تدريب',more:'✨<br>المزيد'};
-      const label=labels[el.dataset.page]; if(label){el.innerHTML=label;return;}
+      const label=labels[el.dataset.page];if(label&&el.innerHTML!==label){el.innerHTML=label;return;}
     }
     let t=el.textContent||'';
     for(const [a,b] of map)t=t.replaceAll(a,b);
     if(t!==el.textContent)el.textContent=t;
   });
-  document.title='Easy English AI';
+  if(document.title!=='Easy English AI')document.title='Easy English AI';
   document.body.classList.add('ee-polished');
   document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content','Easy English AI');
 }
@@ -61,14 +65,31 @@ function enhanceCandidate(card){
   if(!cleanText(f.example.value))setTimeout(()=>fillCard(card,false),120);
 }
 function enhance(root=document){
-  renameUi(root);root.querySelectorAll?.('.ee-candidate').forEach(enhanceCandidate);
+  renameUi(root);
+  if(root.nodeType===1&&root.matches?.('.ee-candidate'))enhanceCandidate(root);
+  root.querySelectorAll?.('.ee-candidate').forEach(enhanceCandidate);
+  if(root.nodeType===1&&root.matches?.('.j-word,.j-card,.ee-candidate'))root.classList.add('ee-surface');
   root.querySelectorAll?.('.j-word,.j-card,.ee-candidate').forEach(x=>x.classList.add('ee-surface'));
 }
-function schedule(root=document){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;enhance(root);});}
+function flush(){
+  scheduled=false;
+  const roots=[...pendingRoots];pendingRoots.clear();
+  if(!roots.length)roots.push(document);
+  for(const root of roots)enhance(root);
+}
+function schedule(root=document){
+  if(root)pendingRoots.add(root);
+  if(scheduled)return;scheduled=true;
+  requestAnimationFrame(flush);
+}
 const obs=new MutationObserver(records=>{
-  for(const r of records){for(const n of r.addedNodes){if(n.nodeType===1){schedule(n);return;}}}
+  let found=false;
+  for(const r of records){
+    for(const n of r.addedNodes){if(n.nodeType===1){pendingRoots.add(n);found=true;}}
+  }
+  if(found&& !scheduled){scheduled=true;requestAnimationFrame(flush);}
 });
 obs.observe(document.documentElement,{childList:true,subtree:true});
 window.addEventListener('load',()=>schedule(document),{once:true});
-setTimeout(()=>schedule(document),120);
+if('requestIdleCallback'in window)requestIdleCallback(()=>schedule(document),{timeout:180});else setTimeout(()=>schedule(document),120);
 })();
