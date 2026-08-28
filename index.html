@@ -36,5 +36,12 @@
   <script src="jordan-pwa.js?v=18"></script>
   <script src="easy-english-v344.js?v=344"></script>
   <script src="easy-english-v345-patch.js?v=348"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js?v=348', { scope: './' }).catch(() => {});
+      }, { once: true });
+    }
+  </script>
 </body>
 </html>
