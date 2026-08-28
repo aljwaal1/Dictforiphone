@@ -40,11 +40,18 @@ jobs:
           test -s jordan/easy-english-v345-patch.css
           test -s jordan/sw.js
           grep -q 'Easy English AI' jordan/index.html
-          grep -q 'manifest.webmanifest?v=348' jordan/index.html
-          grep -q 'easy-english-v345-patch.js?v=348' jordan/index.html
-          grep -q 'easy-english-v345-patch.css?v=348' jordan/index.html
-          grep -q "serviceWorker.register('./sw.js?v=348'" jordan/index.html
-          grep -q 'easy-english-ai-pwa-v348-polish' jordan/sw.js
+          grep -q 'Easy English AI' jordan/jordan-pwa.js
+          grep -q 'استوديو AI للكتاب' jordan/jordan-pwa.js
+          ! grep -q 'القاموس المدرسي الأردني' jordan/jordan-pwa.js
+          grep -q 'const PROPER=' jordan/jordan-pwa.js
+          grep -q 'const key=raw.toLowerCase()' jordan/jordan-pwa.js
+          grep -Fq 'const list=[...map.values()];' jordan/jordan-pwa.js
+          grep -q 'manifest.webmanifest?v=349' jordan/index.html
+          grep -q 'jordan-pwa.js?v=349' jordan/index.html
+          grep -q 'easy-english-v345-patch.js?v=349' jordan/index.html
+          grep -q 'easy-english-v345-patch.css?v=349' jordan/index.html
+          grep -q "serviceWorker.register('./sw.js?v=349'" jordan/index.html
+          grep -q 'easy-english-ai-pwa-v349-polish' jordan/sw.js
           grep -q 'Easy English AI' jordan/manifest.webmanifest
           grep -q '"start_url": "./"' jordan/manifest.webmanifest
           grep -q '"id": "./"' jordan/manifest.webmanifest
