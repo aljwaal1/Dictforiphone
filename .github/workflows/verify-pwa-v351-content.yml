@@ -1,0 +1,67 @@
+name: Verify Easy English AI PWA v351 Content
+
+on:
+  push:
+    branches: ["easy-english-ai-v351-content-cleanup"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: easy-english-ai-pwa-v351-content
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: easy-english-ai-v351-content-cleanup
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply content cleanup
+        run: python3 tool/upgrade_pwa_v351_content.py
+      - name: Content integrity
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('jordan/assets/data/words.json',encoding='utf-8'))
+          assert d['app']=='Easy English AI'
+          assert d['version']==4
+          w=d['words']
+          assert len(w)>500, len(w)
+          assert not any(str(x.get('grade','')).upper()=='KG' for x in w)
+          assert not any('Jordanian curriculum starter set' in str(x) for x in w)
+          assert sum(1 for x in w if x.get('grade')=='1' and x.get('semester')=='تمهيدي')>=90
+          for term in ['school','classroom','morning','teacher','difficult','beautiful']:
+              assert any(str(x.get('word_en','')).lower()==term for x in w), term
+          print('content ok',len(w))
+          PY
+          grep -q "fetch('assets/data/words.json?v=351'" jordan/jordan-pwa.js
+          grep -q "load().then(render)" jordan/jordan-pwa.js
+          grep -q "easy_english_ai_pwa_v3" jordan/jordan-pwa.js
+          grep -q "LEGACY_KEYS" jordan/jordan-pwa.js
+          grep -q "LEGACY_STORE" jordan/app.js
+          ! grep -q 'قاموسي المدرسي' jordan/app.js
+          ! grep -q 'Jordanian curriculum starter set' jordan/app.js
+          grep -q 'jordan-pwa.js?v=351' jordan/index.html
+          grep -q 'sw.js?v=351' jordan/index.html
+      - name: Syntax and manifest
+        run: |
+          node --check jordan/app.js
+          node --check jordan/jordan-pwa.js
+          node --check jordan/sw.js
+          node -e "JSON.parse(require('fs').readFileSync('jordan/manifest.webmanifest','utf8'))"
+      - name: Persist verified v351 source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jordan/app.js jordan/jordan-pwa.js jordan/assets/data/words.json jordan/index.html jordan/sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Materialize Easy English AI PWA v351 content cleanup"
+            git push origin HEAD:easy-english-ai-v351-content-cleanup
+          fi
