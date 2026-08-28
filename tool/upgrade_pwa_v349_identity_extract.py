@@ -31,7 +31,6 @@ replacements={
 for old,new in replacements.items():
     s=s.replace(old,new)
 
-# Normalize the minified validWord implementation and apply the same known-name/place guard used by Android.
 pattern=r"function validWord\(raw,mid\)\{const w=raw\.trim\(\),l=w\.toLowerCase\(\);if\(!/\^\[A-Za-z\]\[A-Za-z'\-\]\*\$/\.test\(w\)\|\|l\.length<\d+\|\|l\.length>\d+\|\|STOP\.has\(l\)(?:\|\|PROPER\.has\(l\.replace\(/\[-'\]/g,''\)\))?\)return false;"
 new_valid="function validWord(raw,mid){const w=raw.trim(),l=w.toLowerCase();if(!/^[A-Za-z][A-Za-z'-]*$/.test(w)||l.length<2||l.length>32||STOP.has(l)||PROPER.has(l.replace(/[-']/g,'')))return false;"
 s2,n=re.subn(pattern,new_valid,s,count=1)
@@ -52,7 +51,8 @@ for old,new in [
 ('jordan-pwa.js?v=18','jordan-pwa.js?v=349'),
 ('easy-english-v345-patch.js?v=348','easy-english-v345-patch.js?v=349'),
 ('easy-english-v345-patch.css?v=348','easy-english-v345-patch.css?v=349'),
-('manifest.webmanifest?v=348','manifest.webmanifest?v=349')]: h=h.replace(old,new)
+('manifest.webmanifest?v=348','manifest.webmanifest?v=349'),
+('sw.js?v=348','sw.js?v=349')]: h=h.replace(old,new)
 idx.write_text(h,encoding='utf-8')
 
 sw=Path('sw.js')
