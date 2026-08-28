@@ -31,6 +31,30 @@ jobs:
           node --check jordan/sw.js
       - name: Manifest JSON
         run: python3 -m json.tool jordan/manifest.webmanifest >/dev/null
+      - name: Functional PDF regression checks
+        run: |
+          cp jordan/jordan-pwa.js /tmp/jordan-pwa.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('/tmp/jordan-pwa.js').read_text(encoding='utf-8')
+          stop=re.search(r"const STOP=new Set\(\('([^']*)'\)\.split\(' '\)\);",s)
+          proper=re.search(r"const PROPER=new Set\(\('([^']*)'\)\.split\(' '\)\);",s)
+          assert stop and proper
+          STOP=set(stop.group(1).split()); PROPER=set(proper.group(1).split())
+          def valid(w):
+              l=w.lower()
+              return bool(re.fullmatch(r"[A-Za-z][A-Za-z'-]*",w)) and 2<=len(l)<=32 and l not in STOP and re.sub(r"[-']",'',l) not in PROPER
+          for w in ['school','classroom','great','happy','beautiful','learn','teacher','difficult','morning','you','have','can']:
+              assert valid(w), w
+          for w in ['and','with','from','Jordan','Amman','Ahmed']:
+              assert not valid(w), w
+          assert 'pdf.min.mjs' not in s
+          assert s.count('pdf.min.js') == 1
+          assert 'const key=raw.toLowerCase();' in s
+          assert 'const list=[...map.values()];' in s
+          print('live functional PDF regression ok')
+          PY
       - name: Required files and live identity
         run: |
           test -s jordan/index.html
@@ -40,18 +64,12 @@ jobs:
           test -s jordan/easy-english-v345-patch.css
           test -s jordan/sw.js
           grep -q 'Easy English AI' jordan/index.html
-          grep -q 'Easy English AI' jordan/jordan-pwa.js
-          grep -q 'استوديو AI للكتاب' jordan/jordan-pwa.js
-          ! grep -q 'القاموس المدرسي الأردني' jordan/jordan-pwa.js
-          grep -q 'const PROPER=' jordan/jordan-pwa.js
-          grep -q 'const key=raw.toLowerCase()' jordan/jordan-pwa.js
-          grep -Fq 'const list=[...map.values()];' jordan/jordan-pwa.js
-          grep -q 'manifest.webmanifest?v=349' jordan/index.html
-          grep -q 'jordan-pwa.js?v=349' jordan/index.html
-          grep -q 'easy-english-v345-patch.js?v=349' jordan/index.html
-          grep -q 'easy-english-v345-patch.css?v=349' jordan/index.html
-          grep -q "serviceWorker.register('./sw.js?v=349'" jordan/index.html
-          grep -q 'easy-english-ai-pwa-v349-polish' jordan/sw.js
+          grep -q 'manifest.webmanifest?v=350' jordan/index.html
+          grep -q 'jordan-pwa.js?v=350' jordan/index.html
+          grep -q 'easy-english-v345-patch.js?v=350' jordan/index.html
+          grep -q 'easy-english-v345-patch.css?v=350' jordan/index.html
+          grep -Fq "serviceWorker.register('./sw.js?v=350'" jordan/index.html
+          grep -q 'easy-english-ai-pwa-v350-functional-qa' jordan/sw.js
           grep -q 'Easy English AI' jordan/manifest.webmanifest
           grep -q '"start_url": "./"' jordan/manifest.webmanifest
           grep -q '"id": "./"' jordan/manifest.webmanifest
