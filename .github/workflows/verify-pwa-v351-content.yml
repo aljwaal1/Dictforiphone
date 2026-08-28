@@ -53,6 +53,7 @@ jobs:
           ! grep -q 'Jordanian curriculum starter set' jordan/app.js
           grep -q 'jordan-pwa.js?v=351' jordan/index.html
           grep -q 'sw.js?v=351' jordan/index.html
+          grep -q "easy-english-ai-pwa-v351-content" jordan/sw.js
       - name: Syntax and manifest
         run: |
           node --check jordan/app.js
