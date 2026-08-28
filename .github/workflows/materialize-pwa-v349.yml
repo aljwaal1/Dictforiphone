@@ -1,0 +1,56 @@
+name: Materialize Easy English AI PWA v349
+
+on:
+  push:
+    branches: ["jordan-school-dictionary"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: easy-english-ai-pwa-v349
+  cancel-in-progress: true
+
+jobs:
+  polish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: jordan-school-dictionary
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply v349 polish
+        run: python3 tool/upgrade_pwa_v349_identity_extract.py
+      - name: JavaScript syntax
+        run: |
+          node --check jordan-pwa.js
+          node --check easy-english-v345-patch.js
+          node --check sw.js
+      - name: Identity and extraction checks
+        run: |
+          grep -q 'Easy English AI' jordan-pwa.js
+          grep -q 'استوديو AI للكتاب' jordan-pwa.js
+          grep -q "'AI بحث'" jordan-pwa.js
+          grep -q "'الصفوف'" jordan-pwa.js
+          grep -q "'تدريب'" jordan-pwa.js
+          ! grep -q 'القاموس المدرسي الأردني' jordan-pwa.js
+          grep -q 'l.length<2' jordan-pwa.js
+          grep -q 'easy-english-ai-pwa-v349-polish' sw.js
+          grep -q 'jordan-pwa.js?v=349' index.html
+      - name: Manifest JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest ok')"
+      - name: Persist v349 source
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jordan-pwa.js index.html sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Materialize Easy English AI PWA v349 source"
+            git push origin HEAD:jordan-school-dictionary
+          fi
