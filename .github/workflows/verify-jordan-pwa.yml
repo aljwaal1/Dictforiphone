@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply v349 source polish
+      - name: Apply v349 source polish for verification
         if: github.event_name != 'pull_request'
         run: python3 tool/upgrade_pwa_v349_identity_extract.py
       - name: JavaScript syntax
@@ -53,6 +53,9 @@ jobs:
           grep -q 'استوديو AI للكتاب' jordan-pwa.js
           ! grep -q 'القاموس المدرسي الأردني' jordan-pwa.js
           grep -q 'l.length<2' jordan-pwa.js
+          grep -q 'const PROPER=' jordan-pwa.js
+          grep -q 'const key=raw.toLowerCase()' jordan-pwa.js
+          grep -Fq 'const list=[...map.values()];' jordan-pwa.js
           grep -q 'easy-english-ai-pwa-v349-polish' sw.js
           grep -q 'jordan-pwa.js?v=349' index.html
       - name: PWA requirements
@@ -68,14 +71,3 @@ jobs:
           if(!/viewport-fit=cover/i.test(h)) throw new Error('safe-area viewport missing');
           console.log('PWA requirements ok');
           NODE
-      - name: Persist verified v349 source
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add jordan-pwa.js index.html sw.js
-          if ! git diff --cached --quiet; then
-            git commit -m "Materialize Easy English AI PWA v349 source"
-            git push origin HEAD:jordan-school-dictionary
-          fi
