@@ -31,6 +31,32 @@ jobs:
           node --check jordan/sw.js
       - name: Manifest JSON
         run: python3 -m json.tool jordan/manifest.webmanifest >/dev/null
+      - name: Content and fresh-install regression checks
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('jordan/assets/data/words.json',encoding='utf-8'))
+          assert d['app']=='Easy English AI'
+          assert d['version']==4
+          w=d['words']
+          assert len(w)==1350, len(w)
+          assert not any(str(x.get('grade','')).upper()=='KG' for x in w)
+          assert not any('Jordanian curriculum starter set' in str(x) for x in w)
+          starter=sum(1 for x in w if x.get('grade')=='1' and x.get('semester')=='تمهيدي')
+          assert starter>=90, starter
+          grades={str(x.get('grade','')) for x in w}
+          assert grades.issubset(set(map(str,range(1,13)))), grades
+          for term in ['apple','school','teacher','classroom','morning','sentence']:
+              assert any(str(x.get('word_en','')).lower()==term for x in w), term
+          print('live content ok',len(w),sorted(grades),'starter',starter)
+          PY
+          grep -q "fetch('assets/data/words.json?v=351'" jordan/jordan-pwa.js
+          grep -q "load().then(render)" jordan/jordan-pwa.js
+          grep -q "easy_english_ai_pwa_v3" jordan/jordan-pwa.js
+          grep -q "LEGACY_KEYS" jordan/jordan-pwa.js
+          grep -q "LEGACY_STORE" jordan/app.js
+          ! grep -q 'قاموسي المدرسي' jordan/app.js
+          ! grep -q 'Jordanian curriculum starter set' jordan/app.js
       - name: Functional PDF regression checks
         run: |
           cp jordan/jordan-pwa.js /tmp/jordan-pwa.js
@@ -64,12 +90,12 @@ jobs:
           test -s jordan/easy-english-v345-patch.css
           test -s jordan/sw.js
           grep -q 'Easy English AI' jordan/index.html
-          grep -q 'manifest.webmanifest?v=350' jordan/index.html
-          grep -q 'jordan-pwa.js?v=350' jordan/index.html
-          grep -q 'easy-english-v345-patch.js?v=350' jordan/index.html
-          grep -q 'easy-english-v345-patch.css?v=350' jordan/index.html
-          grep -Fq "serviceWorker.register('./sw.js?v=350'" jordan/index.html
-          grep -q 'easy-english-ai-pwa-v350-functional-qa' jordan/sw.js
+          grep -q 'manifest.webmanifest?v=351' jordan/index.html
+          grep -q 'jordan-pwa.js?v=351' jordan/index.html
+          grep -q 'easy-english-v345-patch.js?v=351' jordan/index.html
+          grep -q 'easy-english-v345-patch.css?v=351' jordan/index.html
+          grep -Fq "serviceWorker.register('./sw.js?v=351'" jordan/index.html
+          grep -q 'easy-english-ai-pwa-v351-content' jordan/sw.js
           grep -q 'Easy English AI' jordan/manifest.webmanifest
           grep -q '"start_url": "./"' jordan/manifest.webmanifest
           grep -q '"id": "./"' jordan/manifest.webmanifest
