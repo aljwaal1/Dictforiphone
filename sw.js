@@ -1,5 +1,5 @@
-const CACHE='easy-english-ai-pwa-v346-polish';
-const ASSETS=['./','./index.html','./styles.css?v=18','./excel-import.css?v=18','./backup-tools.css?v=18','./jordan-pwa.css?v=18','./easy-english-v344.css?v=344','./easy-english-v345-patch.css?v=346','./app.js?v=18','./v2-learning.js?v=18','./excel-import-v14.js?v=18','./backup-tools.js?v=18','./import-refresh.js?v=18','./ios-fixes.js?v=18','./sentence-display-v15.js?v=18','./jordan-pwa.js?v=18','./easy-english-v344.js?v=344','./easy-english-v345-patch.js?v=346','./manifest.webmanifest?v=346','./assets/data/words.json','./icons/icon-192.svg','./icons/icon-512.svg'];
+const CACHE='easy-english-ai-pwa-v347-polish';
+const ASSETS=['./','./index.html','./styles.css?v=18','./excel-import.css?v=18','./backup-tools.css?v=18','./jordan-pwa.css?v=18','./easy-english-v344.css?v=344','./easy-english-v345-patch.css?v=347','./app.js?v=18','./v2-learning.js?v=18','./excel-import-v14.js?v=18','./backup-tools.js?v=18','./import-refresh.js?v=18','./ios-fixes.js?v=18','./sentence-display-v15.js?v=18','./jordan-pwa.js?v=18','./easy-english-v344.js?v=344','./easy-english-v345-patch.js?v=347','./manifest.webmanifest?v=347','./assets/data/words.json','./icons/icon-192.svg','./icons/icon-512.svg'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
