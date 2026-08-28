@@ -1,8 +1,9 @@
 {
+  "id": "./",
   "name": "Easy English AI",
   "short_name": "Easy English AI",
-  "description": "تعلم الإنجليزية بالكلمات والنطق والأمثلة والبطاقات السريعة واستخراج المفردات من PDF",
-  "start_url": "./index.html?v=344",
+  "description": "Easy English AI - تعلم الإنجليزية بسهولة بالكلمات والجمل والنطق والبطاقات السريعة واستوديو AI للكتاب.",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
