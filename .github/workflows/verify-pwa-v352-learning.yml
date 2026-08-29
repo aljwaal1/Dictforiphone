@@ -27,6 +27,7 @@ jobs:
         run: |
           python3 tool/upgrade_pwa_v352_learning.py
           python3 tool/upgrade_pwa_v352_android_parity.py
+          python3 tool/upgrade_pwa_v352_product_parity.py
       - name: Learning feature regression
         run: |
           grep -q 'بطاقات سريعة' jordan/jordan-pwa.js
@@ -48,6 +49,11 @@ jobs:
           grep -q 'wrongCounts' jordan/jordan-pwa.js
           grep -q 'difficultyScore' jordan/jordan-pwa.js
           grep -q 'smartReviewPool' jordan/jordan-pwa.js
+          grep -q 'التقدم والإحصائيات' jordan/jordan-pwa.js
+          grep -q 'الجمل التعليمية' jordan/jordan-pwa.js
+          grep -q 'حتى 3 ملفات مستقلة لكل طالب' jordan/jordan-pwa.js
+          grep -q 'lastIndexByGrade' jordan/jordan-pwa.js
+          grep -q 'profileProgress' jordan/jordan-pwa.js
           grep -q 'jordan-pwa.js?v=352' jordan/index.html
           grep -q 'sw.js?v=352' jordan/index.html
           grep -q 'easy-english-ai-pwa-v352-learning' jordan/sw.js
@@ -62,6 +68,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add jordan/jordan-pwa.js jordan/index.html jordan/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m "Materialize Easy English AI PWA v352 adaptive learning experience"
+            git commit -m "Materialize Easy English AI PWA v352 full learning parity"
             git push origin HEAD:easy-english-ai-v352-learning
           fi
