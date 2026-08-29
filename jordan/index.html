@@ -38,8 +38,13 @@
   <script src="easy-english-v345-patch.js?v=352"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=352', { scope: './' }).catch(() => {});
+      window.addEventListener('load', async () => {
+        try {
+          const reg = await navigator.serviceWorker.register('./sw.js?v=352-cache-refresh-1', { scope: './', updateViaCache: 'none' });
+          await reg.update();
+          const target = reg.installing || reg.waiting || reg.active;
+          if (target) target.postMessage('CLEAR_OLD_CACHES');
+        } catch (_) {}
       }, { once: true });
     }
   </script>
