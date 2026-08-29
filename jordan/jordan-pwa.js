@@ -14,6 +14,7 @@ function save(){localStorage.setItem(KEY,JSON.stringify(db))}
 
 
 
+
 function progressSnapshot(){ensureProgress();return {review:[...db.review],mastered:[...db.mastered],studied:[...db.studied],difficult:[...db.difficult],wrongCounts:{...db.wrongCounts},points:Number(db.points||0),lastIndexByGrade:{...(db.lastIndexByGrade||{})}}}
 function applyProgress(x={}){db.review=Array.isArray(x.review)?x.review:[];db.mastered=Array.isArray(x.mastered)?x.mastered:[];db.studied=Array.isArray(x.studied)?x.studied:[];db.difficult=Array.isArray(x.difficult)?x.difficult:[];db.wrongCounts=(x.wrongCounts&&typeof x.wrongCounts==='object')?x.wrongCounts:{};db.points=Number(x.points||0);db.lastIndexByGrade=(x.lastIndexByGrade&&typeof x.lastIndexByGrade==='object')?x.lastIndexByGrade:{}}
 function ensureProfiles(){ensureProgress();if(!Array.isArray(db.profiles)||!db.profiles.length){db.profiles=[{id:1,name:'الطالب 1'}];db.activeProfile=1;db.profileProgress={'1':progressSnapshot()}}db.profileProgress=(db.profileProgress&&typeof db.profileProgress==='object')?db.profileProgress:{};db.activeProfile=Number(db.activeProfile||db.profiles[0].id||1);if(!db.profileProgress[String(db.activeProfile)])db.profileProgress[String(db.activeProfile)]=progressSnapshot()}
