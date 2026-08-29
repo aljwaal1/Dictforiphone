@@ -28,27 +28,33 @@ jobs:
           python3 tool/upgrade_pwa_v352_learning.py
           python3 tool/upgrade_pwa_v352_android_parity.py
           python3 tool/upgrade_pwa_v352_product_parity.py
+          python3 tool/upgrade_pwa_v352_advanced_learning.py
       - name: Learning feature regression
         run: |
           grep -q 'بطاقات سريعة' jordan/jordan-pwa.js
           grep -q 'اختبار AI متكيف' jordan/jordan-pwa.js
           grep -q 'مراجعة AI' jordan/jordan-pwa.js
-          grep -q 'تحتاج مراجعة' jordan/jordan-pwa.js
-          grep -q 'أتقنتها' jordan/jordan-pwa.js
-          grep -q 'إظهار المعنى والجملة' jordan/jordan-pwa.js
-          grep -q 'اسمع الجملة' jordan/jordan-pwa.js
           grep -q 'حسب ترتيب ظهور الكلمات في PDF' jordan/jordan-pwa.js
           grep -q 'حسب الوحدة' jordan/jordan-pwa.js
+          grep -q 'حسب الدرس' jordan/jordan-pwa.js
           grep -q 'حسب السهولة' jordan/jordan-pwa.js
           grep -q 'حسب الكلمات المدروسة على الجهاز' jordan/jordan-pwa.js
+          grep -q 'الكلمات الصعبة فقط' jordan/jordan-pwa.js
+          grep -q 'أخطائي الأخيرة' jordan/jordan-pwa.js
+          grep -q 'غير المتقنة فقط' jordan/jordan-pwa.js
+          grep -q 'مختلط ذكي' jordan/jordan-pwa.js
           grep -q 'شامل - جميع الصفوف' jordan/jordan-pwa.js
           grep -q '10 أسئلة' jordan/jordan-pwa.js
           grep -q '20 سؤالاً' jordan/jordan-pwa.js
           grep -q '40 سؤالاً' jordan/jordan-pwa.js
           grep -q 'كل الكلمات المتاحة' jordan/jordan-pwa.js
+          grep -q 'إعادة الأخطاء فقط' jordan/jordan-pwa.js
+          grep -q '40% أخطاء + 30% جديدة + 20% صعبة + 10% متقنة' jordan/jordan-pwa.js
           grep -q 'wrongCounts' jordan/jordan-pwa.js
+          grep -q 'recentMistakes' jordan/jordan-pwa.js
           grep -q 'difficultyScore' jordan/jordan-pwa.js
           grep -q 'smartReviewPool' jordan/jordan-pwa.js
+          grep -q 'progressByScope' jordan/jordan-pwa.js
           grep -q 'التقدم والإحصائيات' jordan/jordan-pwa.js
           grep -q 'الجمل التعليمية' jordan/jordan-pwa.js
           grep -q 'حتى 3 ملفات مستقلة لكل طالب' jordan/jordan-pwa.js
@@ -57,6 +63,12 @@ jobs:
           grep -q 'jordan-pwa.js?v=352' jordan/index.html
           grep -q 'sw.js?v=352' jordan/index.html
           grep -q 'easy-english-ai-pwa-v352-learning' jordan/sw.js
+      - name: Duplicate helper guard
+        run: |
+          test "$(grep -c '^function learningPool' jordan/jordan-pwa.js)" -eq 1
+          test "$(grep -c '^function learningHeader' jordan/jordan-pwa.js)" -eq 1
+          test "$(grep -c '^function progressSnapshot' jordan/jordan-pwa.js)" -eq 1
+          test "$(grep -c '^function ensureProfiles' jordan/jordan-pwa.js)" -eq 1
       - name: Syntax and manifest
         run: |
           node --check jordan/jordan-pwa.js
@@ -68,6 +80,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add jordan/jordan-pwa.js jordan/index.html jordan/sw.js
           if ! git diff --cached --quiet; then
-            git commit -m "Materialize Easy English AI PWA v352 full learning parity"
+            git commit -m "Materialize Easy English AI PWA v352 advanced adaptive learning"
             git push origin HEAD:easy-english-ai-v352-learning
           fi
