@@ -90,6 +90,14 @@ jobs:
           test "$(grep -c '^function learningHeader' jordan/jordan-pwa.js)" -eq 1
           test "$(grep -c '^function progressSnapshot' jordan/jordan-pwa.js)" -eq 1
           test "$(grep -c '^function ensureProfiles' jordan/jordan-pwa.js)" -eq 1
+      - name: Cache refresh regression checks
+        run: |
+          grep -q "easy-english-ai-pwa-v352-cache-refresh-1" jordan/sw.js
+          grep -q "cache:'no-store'" jordan/sw.js
+          grep -q "CLEAR_OLD_CACHES" jordan/sw.js
+          grep -q "updateViaCache: 'none'" jordan/index.html
+          grep -q "reg.update()" jordan/index.html
+          grep -Fq "serviceWorker.register('./sw.js?v=352-cache-refresh-1'" jordan/index.html
       - name: Functional PDF regression checks
         run: |
           cp jordan/jordan-pwa.js /tmp/jordan-pwa.js
@@ -127,8 +135,6 @@ jobs:
           grep -q 'jordan-pwa.js?v=352' jordan/index.html
           grep -q 'easy-english-v345-patch.js?v=352' jordan/index.html
           grep -q 'easy-english-v345-patch.css?v=352' jordan/index.html
-          grep -Fq "serviceWorker.register('./sw.js?v=352'" jordan/index.html
-          grep -q 'easy-english-ai-pwa-v352-learning' jordan/sw.js
           grep -q 'Easy English AI' jordan/manifest.webmanifest
           grep -q '"start_url": "./"' jordan/manifest.webmanifest
           grep -q '"id": "./"' jordan/manifest.webmanifest
