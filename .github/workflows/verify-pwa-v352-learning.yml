@@ -1,0 +1,54 @@
+name: Verify Easy English AI PWA v352 Learning
+
+on:
+  push:
+    branches: ["easy-english-ai-v352-learning"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: easy-english-ai-pwa-v352-learning
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: easy-english-ai-v352-learning
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply learning experience
+        run: python3 tool/upgrade_pwa_v352_learning.py
+      - name: Learning feature regression
+        run: |
+          grep -q 'بطاقات سريعة' jordan/jordan-pwa.js
+          grep -q 'اختبار الكلمات' jordan/jordan-pwa.js
+          grep -q 'مراجعة الكلمات' jordan/jordan-pwa.js
+          grep -q 'تحتاج مراجعة' jordan/jordan-pwa.js
+          grep -q 'أتقنتها' jordan/jordan-pwa.js
+          grep -q 'إظهار المعنى والجملة' jordan/jordan-pwa.js
+          grep -q 'اسمع الجملة' jordan/jordan-pwa.js
+          grep -q '10 أسئلة' jordan/jordan-pwa.js
+          grep -q 'jordan-pwa.js?v=352' jordan/index.html
+          grep -q 'sw.js?v=352' jordan/index.html
+          grep -q 'easy-english-ai-pwa-v352-learning' jordan/sw.js
+      - name: Syntax and manifest
+        run: |
+          node --check jordan/jordan-pwa.js
+          node --check jordan/sw.js
+          node -e "JSON.parse(require('fs').readFileSync('jordan/manifest.webmanifest','utf8'))"
+      - name: Persist verified v352 source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jordan/jordan-pwa.js jordan/index.html jordan/sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Materialize Easy English AI PWA v352 learning experience"
+            git push origin HEAD:easy-english-ai-v352-learning
+          fi
