@@ -15,10 +15,10 @@ function switchProfile(id){ensureProfiles();persistActiveProgress();db.activePro
 '''
 s=s.replace(anchor,helpers,1)
 
-# Mark studied and preserve last card index in quick cards.
-s=s.replace("function quickCards(grade='all',index=0,reveal=false){const pool=learningPool(grade);", "function quickCards(grade='all',index=null,reveal=false){ensureProgress();db.lastIndexByGrade=(db.lastIndexByGrade&&typeof db.lastIndexByGrade==='object')?db.lastIndexByGrade:{};const pool=learningPool(grade);if(index===null)index=Number(db.lastIndexByGrade[grade]||0);")
-s=s.replace("index=Math.max(0,Math.min(index,pool.length-1));const w=pool[index];", "index=Math.max(0,Math.min(index,pool.length-1));db.lastIndexByGrade[grade]=index;const w=pool[index];if(!db.studied.map(String).includes(String(w.id)))db.studied.push(w.id);persistActiveProgress();")
-s=s.replace("sel.onchange=()=>quickCards(sel.value,0,false)","sel.onchange=()=>quickCards(sel.value,null,false)")
+# Mark studied and preserve last card index in quick cards only.
+s=s.replace("function quickCards(grade='all',index=0,reveal=false){const pool=learningPool(grade);", "function quickCards(grade='all',index=null,reveal=false){ensureProgress();db.lastIndexByGrade=(db.lastIndexByGrade&&typeof db.lastIndexByGrade==='object')?db.lastIndexByGrade:{};const pool=learningPool(grade);if(index===null)index=Number(db.lastIndexByGrade[grade]||0);",1)
+s=s.replace("index=Math.max(0,Math.min(index,pool.length-1));const w=pool[index];", "index=Math.max(0,Math.min(index,pool.length-1));db.lastIndexByGrade[grade]=index;const w=pool[index];if(!db.studied.map(String).includes(String(w.id)))db.studied.push(w.id);persistActiveProgress();",1)
+s=s.replace("sel.onchange=()=>quickCards(sel.value,0,false)","sel.onchange=()=>quickCards(sel.value,null,false)",1)
 
 # Replace more() with richer Android-parity menu.
 more=re.search(r"function more\(\)\{.*?\}\nfunction exportDb",s,re.S)
