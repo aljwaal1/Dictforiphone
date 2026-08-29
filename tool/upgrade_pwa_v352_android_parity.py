@@ -4,7 +4,9 @@ p=Path('jordan/jordan-pwa.js')
 s=p.read_text(encoding='utf-8')
 
 # Replace quiz setup + runner created by the base v352 learning upgrade.
-pat=re.compile(r"function quizSetup\(\)\{.*?\}\nfunction reviewCards",re.S)
+# Include the original reviewCards signature in the match so reruns cannot
+# produce a duplicated `(index=0)` suffix.
+pat=re.compile(r"function quizSetup\(\)\{.*?\}\nfunction reviewCards\(index=0\)",re.S)
 m=pat.search(s)
 if not m: raise SystemExit('v352 quiz block not found')
 
@@ -19,9 +21,9 @@ function runQuiz(grade,mode,unit,count,i=0,score=0,questions=[]){ensureProgress(
 function reviewCards(index=0,smart=false)'''
 s=s[:m.start()]+new+s[m.end():]
 # Modify reviewCards pool to support AI-ranked review when smart=true.
-s=s.replace("const pool=db.review.map(id=>db.words.find(w=>String(w.id)===String(id))).filter(Boolean);","const pool=smart?smartReviewPool():db.review.map(id=>db.words.find(w=>String(w.id)===String(id))).filter(Boolean);")
+s=s.replace("const pool=db.review.map(id=>db.words.find(w=>String(w.id)===String(id))).filter(Boolean);","const pool=smart?smartReviewPool():db.review.map(id=>db.words.find(w=>String(w.id)===String(id))).filter(Boolean);",1)
 # Make training card explicitly Android-parity AI review.
-s=s.replace("<h3>مراجعة الكلمات</h3><p>راجع الكلمات التي اخترت أنها تحتاج مراجعة.</p>","<h3>مراجعة AI</h3><p>ترتيب ذكي حسب أخطائك والكلمات الصعبة وغير المتقنة.</p>")
-s=s.replace("ROOT.querySelector('#reviewStart').onclick=()=>reviewCards()","ROOT.querySelector('#reviewStart').onclick=()=>reviewCards(0,true)")
+s=s.replace("<h3>مراجعة الكلمات</h3><p>راجع الكلمات التي اخترت أنها تحتاج مراجعة.</p>","<h3>مراجعة AI</h3><p>ترتيب ذكي حسب أخطائك والكلمات الصعبة وغير المتقنة.</p>",1)
+s=s.replace("ROOT.querySelector('#reviewStart').onclick=()=>reviewCards()","ROOT.querySelector('#reviewStart').onclick=()=>reviewCards(0,true)",1)
 p.write_text(s,encoding='utf-8')
 print('v352 Android parity adaptive quiz applied')
