@@ -1,0 +1,56 @@
+name: Verify Easy English AI PWA v353 Unified
+
+on:
+  push:
+    branches: ["easy-english-ai-v353-unified-pwa"]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript and manifest
+        run: |
+          node --check jordan/jordan-pwa.js
+          node --check jordan/sw.js
+          node -e "JSON.parse(require('fs').readFileSync('jordan/manifest.webmanifest','utf8'))"
+      - name: One UI runtime only
+        run: |
+          grep -q 'jordan-pwa.js?v=353' jordan/index.html
+          test "$(grep -c '<script src=' jordan/index.html)" -eq 1
+          ! grep -q 'app.js' jordan/index.html
+          ! grep -q 'v2-learning.js' jordan/index.html
+          ! grep -q 'excel-import-v14.js' jordan/index.html
+          ! grep -q 'backup-tools.js' jordan/index.html
+          ! grep -q 'import-refresh.js' jordan/index.html
+          ! grep -q 'ios-fixes.js' jordan/index.html
+          ! grep -q 'sentence-display-v15.js' jordan/index.html
+          ! grep -q 'easy-english-v344.js' jordan/index.html
+          ! grep -q 'easy-english-v345-patch.js' jordan/index.html
+      - name: Unified feature coverage
+        run: |
+          grep -q 'استوديو AI للكتاب' jordan/jordan-pwa.js
+          grep -q 'accept="application/pdf"' jordan/jordan-pwa.js
+          grep -q 'async function extractPdf' jordan/jordan-pwa.js
+          grep -q 'function saveCandidates' jordan/jordan-pwa.js
+          grep -q 'بطاقات سريعة' jordan/jordan-pwa.js
+          grep -q 'اختبار AI متكيف' jordan/jordan-pwa.js
+          grep -q 'مراجعة AI' jordan/jordan-pwa.js
+          grep -q 'profileProgress' jordan/jordan-pwa.js
+          grep -q 'easy-english-ai-backup.json' jordan/jordan-pwa.js
+          grep -q "easy_english_ai_pwa_v3" jordan/jordan-pwa.js
+          grep -q 'LEGACY_KEYS' jordan/jordan-pwa.js
+      - name: Cache isolation
+        run: |
+          grep -q "easy-english-ai-pwa-v353-unified" jordan/sw.js
+          grep -q "jordan-pwa.js?v=353" jordan/sw.js
+          ! grep -q 'app.js' jordan/sw.js
+          ! grep -q 'v2-learning.js' jordan/sw.js
+          ! grep -q 'easy-english-v344.js' jordan/sw.js
+          ! grep -q 'easy-english-v345-patch.js' jordan/sw.js
+          grep -q "CLEAR_OLD_CACHES" jordan/sw.js
+          grep -q "updateViaCache: 'none'" jordan/index.html
