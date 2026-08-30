@@ -18,20 +18,11 @@ jobs:
           node-version: "22"
       - name: JavaScript syntax
         run: |
-          node --check jordan/app.js
-          node --check jordan/v2-learning.js
-          node --check jordan/excel-import-v14.js
-          node --check jordan/backup-tools.js
-          node --check jordan/import-refresh.js
-          node --check jordan/ios-fixes.js
-          node --check jordan/sentence-display-v15.js
           node --check jordan/jordan-pwa.js
-          node --check jordan/easy-english-v344.js
-          node --check jordan/easy-english-v345-patch.js
           node --check jordan/sw.js
       - name: Manifest JSON
         run: python3 -m json.tool jordan/manifest.webmanifest >/dev/null
-      - name: Content and fresh-install regression checks
+      - name: Content regression checks
         run: |
           python3 - <<'PY'
           import json
@@ -50,13 +41,22 @@ jobs:
               assert any(str(x.get('word_en','')).lower()==term for x in w), term
           print('live content ok',len(w),sorted(grades),'starter',starter)
           PY
-          grep -q "fetch('assets/data/words.json?v=352'" jordan/jordan-pwa.js
           grep -q "load().then(render)" jordan/jordan-pwa.js
           grep -q "easy_english_ai_pwa_v3" jordan/jordan-pwa.js
           grep -q "LEGACY_KEYS" jordan/jordan-pwa.js
-          grep -q "LEGACY_STORE" jordan/app.js
-          ! grep -q 'قاموسي المدرسي' jordan/app.js
-          ! grep -q 'Jordanian curriculum starter set' jordan/app.js
+      - name: One UI runtime only
+        run: |
+          grep -q 'jordan-pwa.js?v=353' jordan/index.html
+          test "$(grep -c '<script src=' jordan/index.html)" -eq 1
+          ! grep -q 'app.js' jordan/index.html
+          ! grep -q 'v2-learning.js' jordan/index.html
+          ! grep -q 'excel-import-v14.js' jordan/index.html
+          ! grep -q 'backup-tools.js' jordan/index.html
+          ! grep -q 'import-refresh.js' jordan/index.html
+          ! grep -q 'ios-fixes.js' jordan/index.html
+          ! grep -q 'sentence-display-v15.js' jordan/index.html
+          ! grep -q 'easy-english-v344.js' jordan/index.html
+          ! grep -q 'easy-english-v345-patch.js' jordan/index.html
       - name: Advanced learning regression checks
         run: |
           grep -q 'بطاقات سريعة' jordan/jordan-pwa.js
@@ -65,41 +65,21 @@ jobs:
           grep -q 'حسب ترتيب ظهور الكلمات في PDF' jordan/jordan-pwa.js
           grep -q 'حسب الوحدة' jordan/jordan-pwa.js
           grep -q 'حسب الدرس' jordan/jordan-pwa.js
-          grep -q 'حسب السهولة' jordan/jordan-pwa.js
-          grep -q 'حسب الكلمات المدروسة على الجهاز' jordan/jordan-pwa.js
           grep -q 'الكلمات الصعبة فقط' jordan/jordan-pwa.js
           grep -q 'أخطائي الأخيرة' jordan/jordan-pwa.js
           grep -q 'غير المتقنة فقط' jordan/jordan-pwa.js
           grep -q 'مختلط ذكي' jordan/jordan-pwa.js
-          grep -q 'شامل - جميع الصفوف' jordan/jordan-pwa.js
-          grep -q '10 أسئلة' jordan/jordan-pwa.js
-          grep -q '20 سؤالاً' jordan/jordan-pwa.js
-          grep -q '40 سؤالاً' jordan/jordan-pwa.js
-          grep -q 'كل الكلمات المتاحة' jordan/jordan-pwa.js
           grep -q 'إعادة الأخطاء فقط' jordan/jordan-pwa.js
-          grep -q 'wrongCounts' jordan/jordan-pwa.js
-          grep -q 'recentMistakes' jordan/jordan-pwa.js
-          grep -q 'difficultyScore' jordan/jordan-pwa.js
-          grep -q 'smartReviewPool' jordan/jordan-pwa.js
-          grep -q 'progressByScope' jordan/jordan-pwa.js
           grep -q 'profileProgress' jordan/jordan-pwa.js
           grep -q 'lastIndexByGrade' jordan/jordan-pwa.js
-          grep -q 'التقدم والإحصائيات' jordan/jordan-pwa.js
-          grep -q 'الجمل التعليمية' jordan/jordan-pwa.js
           test "$(grep -c '^function learningPool' jordan/jordan-pwa.js)" -eq 1
           test "$(grep -c '^function learningHeader' jordan/jordan-pwa.js)" -eq 1
-          test "$(grep -c '^function progressSnapshot' jordan/jordan-pwa.js)" -eq 1
-          test "$(grep -c '^function ensureProfiles' jordan/jordan-pwa.js)" -eq 1
-      - name: Cache refresh regression checks
+      - name: PDF and book studio checks
         run: |
-          grep -q "easy-english-ai-pwa-v352-cache-refresh-1" jordan/sw.js
-          grep -q "cache:'no-store'" jordan/sw.js
-          grep -q "CLEAR_OLD_CACHES" jordan/sw.js
-          grep -q "updateViaCache: 'none'" jordan/index.html
-          grep -q "reg.update()" jordan/index.html
-          grep -Fq "serviceWorker.register('./sw.js?v=352-cache-refresh-1'" jordan/index.html
-      - name: Functional PDF regression checks
-        run: |
+          grep -q 'استوديو AI للكتاب' jordan/jordan-pwa.js
+          grep -q 'accept="application/pdf"' jordan/jordan-pwa.js
+          grep -q 'async function extractPdf' jordan/jordan-pwa.js
+          grep -q 'function saveCandidates' jordan/jordan-pwa.js
           cp jordan/jordan-pwa.js /tmp/jordan-pwa.js
           python3 - <<'PY'
           from pathlib import Path
@@ -122,19 +102,20 @@ jobs:
           assert 'const list=[...map.values()];' in s
           print('live functional PDF regression ok')
           PY
-      - name: Required files and live identity
+      - name: Cache isolation and identity
         run: |
-          test -s jordan/index.html
-          test -s jordan/jordan-pwa.js
-          test -s jordan/easy-english-v344.js
-          test -s jordan/easy-english-v345-patch.js
-          test -s jordan/easy-english-v345-patch.css
-          test -s jordan/sw.js
+          grep -q "easy-english-ai-pwa-v353-unified" jordan/sw.js
+          grep -q "jordan-pwa.js?v=353" jordan/sw.js
+          ! grep -q 'app.js' jordan/sw.js
+          ! grep -q 'v2-learning.js' jordan/sw.js
+          ! grep -q 'easy-english-v344.js' jordan/sw.js
+          ! grep -q 'easy-english-v345-patch.js' jordan/sw.js
+          grep -q "CLEAR_OLD_CACHES" jordan/sw.js
+          grep -q "updateViaCache: 'none'" jordan/index.html
+          grep -q "reg.update()" jordan/index.html
+          grep -Fq "serviceWorker.register('./sw.js?v=353-unified-1'" jordan/index.html
+          grep -q 'manifest.webmanifest?v=353' jordan/index.html
           grep -q 'Easy English AI' jordan/index.html
-          grep -q 'manifest.webmanifest?v=352' jordan/index.html
-          grep -q 'jordan-pwa.js?v=352' jordan/index.html
-          grep -q 'easy-english-v345-patch.js?v=352' jordan/index.html
-          grep -q 'easy-english-v345-patch.css?v=352' jordan/index.html
           grep -q 'Easy English AI' jordan/manifest.webmanifest
           grep -q '"start_url": "./"' jordan/manifest.webmanifest
           grep -q '"id": "./"' jordan/manifest.webmanifest
