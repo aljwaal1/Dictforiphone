@@ -8,39 +8,26 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Easy English AI" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <link rel="manifest" href="manifest.webmanifest?v=352" />
+  <link rel="manifest" href="manifest.webmanifest?v=353" />
   <link rel="apple-touch-icon" href="icons/icon-192.svg" />
-  <link rel="stylesheet" href="styles.css?v=18" />
-  <link rel="stylesheet" href="excel-import.css?v=18" />
-  <link rel="stylesheet" href="backup-tools.css?v=18" />
-  <link rel="stylesheet" href="jordan-pwa.css?v=18" />
-  <link rel="stylesheet" href="easy-english-v344.css?v=344" />
-  <link rel="stylesheet" href="easy-english-v345-patch.css?v=352" />
+  <link rel="stylesheet" href="jordan-pwa.css?v=353" />
+  <link rel="stylesheet" href="easy-english-v345-patch.css?v=353" />
   <title>Easy English AI</title>
-  <script>
-    try {
-      document.title = 'Easy English AI';
-      localStorage.setItem('easy_english_ai_prep_v344', '1');
-    } catch (_) {}
-  </script>
 </head>
 <body>
   <div id="app"></div>
-  <script src="app.js?v=18"></script>
-  <script src="v2-learning.js?v=18"></script>
-  <script src="excel-import-v14.js?v=18"></script>
-  <script src="backup-tools.js?v=18"></script>
-  <script src="import-refresh.js?v=18"></script>
-  <script src="ios-fixes.js?v=18"></script>
-  <script src="sentence-display-v15.js?v=18"></script>
-  <script src="jordan-pwa.js?v=352"></script>
-  <script src="easy-english-v344.js?v=344"></script>
-  <script src="easy-english-v345-patch.js?v=352"></script>
+
+  <!-- v353: one application runtime. Legacy UI engines are intentionally not loaded. -->
+  <script src="jordan-pwa.js?v=353"></script>
+
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
         try {
-          const reg = await navigator.serviceWorker.register('./sw.js?v=352-cache-refresh-1', { scope: './', updateViaCache: 'none' });
+          const reg = await navigator.serviceWorker.register('./sw.js?v=353-unified-1', {
+            scope: './',
+            updateViaCache: 'none'
+          });
           await reg.update();
           const target = reg.installing || reg.waiting || reg.active;
           if (target) target.postMessage('CLEAR_OLD_CACHES');
