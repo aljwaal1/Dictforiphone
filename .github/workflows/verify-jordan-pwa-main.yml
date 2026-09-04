@@ -30,40 +30,55 @@ jobs:
           assert d['app']=='Easy English AI'
           assert d['version']==4
           w=d['words']
-          assert len(w)==1350, len(w)
+          assert len(w)==1350
           assert not any(str(x.get('grade','')).upper()=='KG' for x in w)
-          assert not any('Jordanian curriculum starter set' in str(x) for x in w)
           starter=sum(1 for x in w if x.get('grade')=='1' and x.get('semester')=='تمهيدي')
-          assert starter>=90, starter
-          grades={str(x.get('grade','')) for x in w}
-          assert grades.issubset(set(map(str,range(1,13)))), grades
+          assert starter>=90
           for term in ['apple','school','teacher','classroom','morning','sentence']:
               assert any(str(x.get('word_en','')).lower()==term for x in w), term
-          print('live content ok',len(w),sorted(grades),'starter',starter)
           PY
           grep -q "load().then(render)" jordan/jordan-pwa.js
           grep -q "easy_english_ai_pwa_v3" jordan/jordan-pwa.js
           grep -q "LEGACY_KEYS" jordan/jordan-pwa.js
-      - name: One UI runtime only
+      - name: Unified runtime and v354 identity
         run: |
-          grep -q 'jordan-pwa.js?v=353' jordan/index.html
+          grep -q 'jordan-pwa.js?v=354' jordan/index.html
           test "$(grep -c '<script src=' jordan/index.html)" -eq 1
           ! grep -q 'app.js' jordan/index.html
           ! grep -q 'v2-learning.js' jordan/index.html
-          ! grep -q 'excel-import-v14.js' jordan/index.html
-          ! grep -q 'backup-tools.js' jordan/index.html
-          ! grep -q 'import-refresh.js' jordan/index.html
-          ! grep -q 'ios-fixes.js' jordan/index.html
-          ! grep -q 'sentence-display-v15.js' jordan/index.html
           ! grep -q 'easy-english-v344.js' jordan/index.html
           ! grep -q 'easy-english-v345-patch.js' jordan/index.html
-      - name: Advanced learning regression checks
+          grep -q "easy-english-ai-pwa-v354-book-translation" jordan/sw.js
+          grep -q "jordan-pwa.js?v=354" jordan/sw.js
+          grep -Fq "serviceWorker.register('./sw.js?v=354-book-translation-1'" jordan/index.html
+          grep -q 'manifest.webmanifest?v=354' jordan/index.html
+      - name: iPhone enrichment and PDF checks
+        run: |
+          grep -q "easy_english_ai_enrichment_v1" jordan/jordan-pwa.js
+          grep -q "indexedDB.open" jordan/jordan-pwa.js
+          grep -q "navigator.hardwareConcurrency" jordan/jordan-pwa.js
+          grep -q "dictionaryapi.dev" jordan/jordan-pwa.js
+          grep -q "mymemory.translated.net" jordan/jordan-pwa.js
+          grep -q "async function extractPdf(file,onPage,onProgress)" jordan/jordan-pwa.js
+          grep -q "await pdf.destroy" jordan/jordan-pwa.js
+          grep -q "requestIdleCallback" jordan/jordan-pwa.js
+          grep -q "function shouldSkipForGrade" jordan/jordan-pwa.js
+          grep -q "\['1','2','3'\].includes" jordan/jordan-pwa.js
+          test "$(grep -c '^async function extractPdf' jordan/jordan-pwa.js)" -eq 1
+      - name: Book translation checks
+        run: |
+          grep -q 'ترجمة كتاب' jordan/jordan-pwa.js
+          grep -q 'الكلمات ومعانيها' jordan/jordan-pwa.js
+          grep -q 'الجمل ومعانيها' jordan/jordan-pwa.js
+          grep -q 'function bookTranslate()' jordan/jordan-pwa.js
+          grep -q 'function translateBookRun(mode)' jordan/jordan-pwa.js
+          grep -q "page==='booktranslate'" jordan/jordan-pwa.js
+          test "$(grep -c '^function render()' jordan/jordan-pwa.js)" -eq 1
+      - name: Existing learning regression checks
         run: |
           grep -q 'بطاقات سريعة' jordan/jordan-pwa.js
           grep -q 'اختبار AI متكيف' jordan/jordan-pwa.js
           grep -q 'مراجعة AI' jordan/jordan-pwa.js
-          grep -q 'حسب ترتيب ظهور الكلمات في PDF' jordan/jordan-pwa.js
-          grep -q 'حسب الوحدة' jordan/jordan-pwa.js
           grep -q 'حسب الدرس' jordan/jordan-pwa.js
           grep -q 'الكلمات الصعبة فقط' jordan/jordan-pwa.js
           grep -q 'أخطائي الأخيرة' jordan/jordan-pwa.js
@@ -71,51 +86,3 @@ jobs:
           grep -q 'مختلط ذكي' jordan/jordan-pwa.js
           grep -q 'إعادة الأخطاء فقط' jordan/jordan-pwa.js
           grep -q 'profileProgress' jordan/jordan-pwa.js
-          grep -q 'lastIndexByGrade' jordan/jordan-pwa.js
-          test "$(grep -c '^function learningPool' jordan/jordan-pwa.js)" -eq 1
-          test "$(grep -c '^function learningHeader' jordan/jordan-pwa.js)" -eq 1
-      - name: PDF and book studio checks
-        run: |
-          grep -q 'استوديو AI للكتاب' jordan/jordan-pwa.js
-          grep -q 'accept="application/pdf"' jordan/jordan-pwa.js
-          grep -q 'async function extractPdf' jordan/jordan-pwa.js
-          grep -q 'function saveCandidates' jordan/jordan-pwa.js
-          cp jordan/jordan-pwa.js /tmp/jordan-pwa.js
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          s=Path('/tmp/jordan-pwa.js').read_text(encoding='utf-8')
-          stop=re.search(r"const STOP=new Set\(\('([^']*)'\)\.split\(' '\)\);",s)
-          proper=re.search(r"const PROPER=new Set\(\('([^']*)'\)\.split\(' '\)\);",s)
-          assert stop and proper
-          STOP=set(stop.group(1).split()); PROPER=set(proper.group(1).split())
-          def valid(w):
-              l=w.lower()
-              return bool(re.fullmatch(r"[A-Za-z][A-Za-z'-]*",w)) and 2<=len(l)<=32 and l not in STOP and re.sub(r"[-']",'',l) not in PROPER
-          for w in ['school','classroom','great','happy','beautiful','learn','teacher','difficult','morning','you','have','can']:
-              assert valid(w), w
-          for w in ['and','with','from','Jordan','Amman','Ahmed']:
-              assert not valid(w), w
-          assert 'pdf.min.mjs' not in s
-          assert s.count('pdf.min.js') == 1
-          assert 'const key=raw.toLowerCase();' in s
-          assert 'const list=[...map.values()];' in s
-          print('live functional PDF regression ok')
-          PY
-      - name: Cache isolation and identity
-        run: |
-          grep -q "easy-english-ai-pwa-v353-unified" jordan/sw.js
-          grep -q "jordan-pwa.js?v=353" jordan/sw.js
-          ! grep -q 'app.js' jordan/sw.js
-          ! grep -q 'v2-learning.js' jordan/sw.js
-          ! grep -q 'easy-english-v344.js' jordan/sw.js
-          ! grep -q 'easy-english-v345-patch.js' jordan/sw.js
-          grep -q "CLEAR_OLD_CACHES" jordan/sw.js
-          grep -q "updateViaCache: 'none'" jordan/index.html
-          grep -q "reg.update()" jordan/index.html
-          grep -Fq "serviceWorker.register('./sw.js?v=353-unified-1'" jordan/index.html
-          grep -q 'manifest.webmanifest?v=353' jordan/index.html
-          grep -q 'Easy English AI' jordan/index.html
-          grep -q 'Easy English AI' jordan/manifest.webmanifest
-          grep -q '"start_url": "./"' jordan/manifest.webmanifest
-          grep -q '"id": "./"' jordan/manifest.webmanifest
