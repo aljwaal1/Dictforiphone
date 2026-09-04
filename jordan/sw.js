@@ -1,6 +1,6 @@
-const CACHE='easy-english-ai-pwa-v353-unified';
+const CACHE='easy-english-ai-pwa-v354-book-translation';
 const OLD_CACHE_MARKERS=['easy-english-ai','qamoosi','jordan-school-dictionary','jordan-pwa'];
-const ASSETS=['./','./index.html','./jordan-pwa.css?v=353','./easy-english-v345-patch.css?v=353','./jordan-pwa.js?v=353','./manifest.webmanifest?v=353','./assets/data/words.json','./icons/icon-192.svg','./icons/icon-512.svg'];
+const ASSETS=['./','./index.html','./jordan-pwa.css?v=354','./easy-english-v345-patch.css?v=354','./jordan-pwa.js?v=354','./manifest.webmanifest?v=354','./assets/data/words.json','./icons/icon-192.svg','./icons/icon-512.svg'];
 const STATIC_PATHS=new Set(ASSETS.map(x=>new URL(x,self.location.href).pathname));
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k!==CACHE&&OLD_CACHE_MARKERS.some(m=>k.includes(m))).map(k=>caches.delete(k)));await self.clients.claim();})())});

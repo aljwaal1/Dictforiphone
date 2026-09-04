@@ -8,23 +8,23 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Easy English AI" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <link rel="manifest" href="manifest.webmanifest?v=353" />
+  <link rel="manifest" href="manifest.webmanifest?v=354" />
   <link rel="apple-touch-icon" href="icons/icon-192.svg" />
-  <link rel="stylesheet" href="jordan-pwa.css?v=353" />
-  <link rel="stylesheet" href="easy-english-v345-patch.css?v=353" />
+  <link rel="stylesheet" href="jordan-pwa.css?v=354" />
+  <link rel="stylesheet" href="easy-english-v345-patch.css?v=354" />
   <title>Easy English AI</title>
 </head>
 <body>
   <div id="app"></div>
 
-  <!-- v353: one application runtime. Legacy UI engines are intentionally not loaded. -->
-  <script src="jordan-pwa.js?v=353"></script>
+  <!-- v354: one application runtime with native iPhone-friendly PDF processing and book translation. -->
+  <script src="jordan-pwa.js?v=354"></script>
 
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
         try {
-          const reg = await navigator.serviceWorker.register('./sw.js?v=353-unified-1', {
+          const reg = await navigator.serviceWorker.register('./sw.js?v=354-book-translation-1', {
             scope: './',
             updateViaCache: 'none'
           });
