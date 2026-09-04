@@ -1,0 +1,81 @@
+name: Verify PWA v356 Translation Resilience
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "tool/upgrade_pwa_v356_translation_resilience.py"
+      - "jordan/jordan-pwa.css"
+      - ".github/workflows/verify-pwa-v356-translation-resilience.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pwa-v356-translation-resilience
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Apply v356 upgrade
+        run: python3 tool/upgrade_pwa_v356_translation_resilience.py
+      - name: JavaScript syntax
+        run: |
+          node --check jordan/jordan-pwa.js
+          node --check jordan/sw.js
+      - name: Translation resilience checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('jordan/jordan-pwa.js').read_text(encoding='utf-8')
+          css=Path('jordan/jordan-pwa.css').read_text(encoding='utf-8')
+          idx=Path('jordan/index.html').read_text(encoding='utf-8')
+          sw=Path('jordan/sw.js').read_text(encoding='utf-8')
+          checks=[
+            'googleTranslateEnAr',
+            'myMemoryTranslateEnAr',
+            'splitTranslationChunks',
+            'mapBookTranslations',
+            'renderBookTranslationResults',
+            'بانتظار الترجمة',
+            'إعادة محاولة غير المترجم',
+            "jordan-pwa.js?v=356",
+            "sw.js?v=356-translation-resilience-1",
+          ]
+          missing=[x for x in checks if x not in (js+idx)]
+          assert not missing, missing
+          assert 'grid-template-columns:auto minmax(0,1fr) auto' in css
+          assert 'overflow-wrap:anywhere' in css
+          assert 'unicode-bidi:plaintext' in css
+          assert 'easy-english-ai-pwa-v356-translation-resilience' in sw
+          assert 'jordan-pwa.js?v=356' in sw
+          assert js.count('async function translateBookRun') == 1
+          assert js.count('function renderBookTranslationResults') == 1
+          print('v356 checks passed')
+          PY
+      - name: Preserve book translation modes and autosave
+        run: |
+          grep -q 'الكلمات ومعانيها' jordan/jordan-pwa.js
+          grep -q 'الجمل ومعانيها' jordan/jordan-pwa.js
+          grep -q 'الفقرات ومعانيها' jordan/jordan-pwa.js
+          grep -q 'saveWorkSession' jordan/jordan-pwa.js
+          grep -q 'loadWorkSession' jordan/jordan-pwa.js
+          grep -q 'indexedDB.open' jordan/jordan-pwa.js
+      - name: Persist v356 source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jordan/jordan-pwa.js jordan/index.html jordan/sw.js jordan/jordan-pwa.css
+          if ! git diff --cached --quiet; then
+            git commit -m "Materialize PWA v356 translation resilience"
+            git push origin HEAD:main
+          fi
