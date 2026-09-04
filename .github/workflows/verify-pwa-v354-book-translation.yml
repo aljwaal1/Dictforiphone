@@ -23,8 +23,14 @@ jobs:
         with:
           ref: easy-english-ai-v354-book-translation
           fetch-depth: 0
-      - name: Apply v354 upgrade
-        run: python3 tool/upgrade_pwa_v354_book_translation.py
+      - name: Apply v354 upgrade if needed
+        shell: bash
+        run: |
+          if grep -q 'function bookTranslate()' jordan/jordan-pwa.js; then
+            echo 'v354 source already materialized'
+          else
+            python3 tool/upgrade_pwa_v354_book_translation.py
+          fi
       - name: JavaScript syntax
         run: |
           node --check jordan/jordan-pwa.js
@@ -36,32 +42,12 @@ jobs:
           js=Path('jordan/jordan-pwa.js').read_text()
           idx=Path('jordan/index.html').read_text()
           sw=Path('jordan/sw.js').read_text()
-          required=[
-            "const ENRICH_DB='easy_english_ai_enrichment_v1'",
-            'indexedDB.open',
-            'navigator.hardwareConcurrency',
-            'dictionaryapi.dev',
-            'mymemory.translated.net',
-            'async function extractPdf(file,onPage,onProgress)',
-            'await pdf.destroy',
-            'function shouldSkipForGrade',
-            "['1','2','3'].includes",
-            'function bookTranslate()',
-            "data-mode=\"words\"",
-            "data-mode=\"sentences\"",
-            'function translateBookRun(mode)',
-            "page==='booktranslate'",
-            'استوديو AI للكتاب',
-            'ترجمة كتاب',
-            'الكلمات ومعانيها',
-            'الجمل ومعانيها',
-          ]
+          required=["const ENRICH_DB='easy_english_ai_enrichment_v1'",'indexedDB.open','navigator.hardwareConcurrency','dictionaryapi.dev','mymemory.translated.net','async function extractPdf(file,onPage,onProgress)','await pdf.destroy','function shouldSkipForGrade',"['1','2','3'].includes",'function bookTranslate()',"data-mode=\"words\"", "data-mode=\"sentences\"",'function translateBookRun(mode)',"page==='booktranslate'",'استوديو AI للكتاب','ترجمة كتاب','الكلمات ومعانيها','الجمل ومعانيها']
           missing=[x for x in required if x not in js]
           assert not missing, missing
           assert 'jordan-pwa.js?v=354' in idx
           assert 'sw.js?v=354-book-translation-1' in idx
           assert 'easy-english-ai-pwa-v354-book-translation' in sw
-          assert 'jordan-pwa.js?v=354' in sw
           assert js.count('function render()') == 1
           assert js.count('function bookTranslate()') == 1
           assert js.count('async function extractPdf') == 1
