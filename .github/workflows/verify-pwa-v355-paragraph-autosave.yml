@@ -1,0 +1,88 @@
+name: Verify PWA v355 Paragraph Autosave
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "tool/upgrade_pwa_v355_paragraph_autosave.py"
+      - ".github/workflows/verify-pwa-v355-paragraph-autosave.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pwa-v355-paragraph-autosave
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Apply v355 upgrade
+        run: python3 tool/upgrade_pwa_v355_paragraph_autosave.py
+      - name: JavaScript syntax
+        run: |
+          node --check jordan/jordan-pwa.js
+          node --check jordan/sw.js
+      - name: Paragraph and autosave checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('jordan/jordan-pwa.js').read_text(encoding='utf-8')
+          idx=Path('jordan/index.html').read_text(encoding='utf-8')
+          sw=Path('jordan/sw.js').read_text(encoding='utf-8')
+          required=[
+            'function paragraphList(text)',
+            'function workSessionKey(file,mode)',
+            'async function saveWorkSession(file,mode,state)',
+            'async function loadWorkSession(file,mode)',
+            'data-mode="paragraphs"',
+            'الفقرات ومعانيها',
+            "['words','sentences','paragraphs'].includes(mode)",
+            "mode==='paragraphs'?paragraphList(text):sentenceList(text)",
+            'تم الحفظ تلقائيًا',
+            'ابدأ / أكمل الترجمة',
+            'تم العثور على حفظ تلقائي سابق',
+            "phase:'reading'",
+            "phase:'translating'",
+            "phase:'interrupted'",
+            "parts.join(' ').replace(/ *\\n */g,'\\n')",
+          ]
+          missing=[x for x in required if x not in js]
+          assert not missing, missing
+          assert 'jordan-pwa.js?v=355' in idx
+          assert 'sw.js?v=355-paragraph-autosave-1' in idx
+          assert 'easy-english-ai-pwa-v355-paragraph-autosave' in sw
+          assert 'jordan-pwa.js?v=355' in sw
+          assert js.count('function bookTranslate()')==1
+          assert js.count('async function translateBookRun(mode)')==1
+          assert js.count('function paragraphList(text)')==1
+          print('v355 paragraph/autosave regression checks passed')
+          PY
+      - name: Preserve existing features
+        run: |
+          grep -q 'استوديو AI للكتاب' jordan/jordan-pwa.js
+          grep -q 'الكلمات ومعانيها' jordan/jordan-pwa.js
+          grep -q 'الجمل ومعانيها' jordan/jordan-pwa.js
+          grep -q 'dictionaryapi.dev' jordan/jordan-pwa.js
+          grep -q 'mymemory.translated.net' jordan/jordan-pwa.js
+          grep -q 'indexedDB.open' jordan/jordan-pwa.js
+          grep -q 'navigator.hardwareConcurrency' jordan/jordan-pwa.js
+          grep -q 'function shouldSkipForGrade' jordan/jordan-pwa.js
+          test "$(grep -c '<script src=' jordan/index.html)" -eq 1
+      - name: Persist v355 source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jordan/jordan-pwa.js jordan/index.html jordan/sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Materialize PWA v355 paragraph translation and autosave"
+            git push origin HEAD:main
+          fi
