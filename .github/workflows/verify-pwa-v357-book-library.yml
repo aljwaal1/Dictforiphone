@@ -1,0 +1,79 @@
+name: Verify PWA v357 Book Library
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "tool/upgrade_pwa_v357_book_library_speech_filter.py"
+      - ".github/workflows/verify-pwa-v357-book-library.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pwa-v357-book-library
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply v357 upgrade
+        run: python3 tool/upgrade_pwa_v357_book_library_speech_filter.py
+      - name: JavaScript syntax
+        run: |
+          node --check jordan/jordan-pwa.js
+          node --check jordan/sw.js
+      - name: v357 feature checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('jordan/jordan-pwa.js').read_text(encoding='utf-8')
+          css=Path('jordan/jordan-pwa.css').read_text(encoding='utf-8')
+          idx=Path('jordan/index.html').read_text(encoding='utf-8')
+          sw=Path('jordan/sw.js').read_text(encoding='utf-8')
+          required=[
+            'const BOOK_FUNCTION_WORDS=',
+            'function shouldTranslateBookWord',
+            'function saveBookToLibrary',
+            'function loadBookLibrary',
+            'function renderBookLibrary',
+            'function speakTracked',
+            'function renderTrackedText',
+            '💾 حفظ الكتاب',
+            '📚 كتبي',
+            'data-mode="paragraphs"',
+            'shouldTranslateBookWord(raw,text,m.index)',
+            'window.__btLibraryFile',
+            'rememberBookMode',
+          ]
+          missing=[x for x in required if x not in js]
+          assert not missing, missing
+          assert '.bt-speech-chunk.bt-speaking' in css
+          assert '.bt-english-block' in css
+          assert 'jordan-pwa.js?v=357' in idx
+          assert 'jordan-pwa.css?v=357' in idx
+          assert 'sw.js?v=357-book-library-1' in idx
+          assert 'easy-english-ai-pwa-v357-book-library' in sw
+          assert 'jordan-pwa.js?v=357' in sw
+          # Preserve previous reliability and autosave features
+          for x in ['mapBookTranslations','translateEnAr','saveWorkSession','loadWorkSession','paragraphList','renderBookTranslationResults']:
+              assert x in js, x
+          print('v357 book library/speech/filter checks passed')
+          PY
+      - name: Persist v357 source
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jordan/jordan-pwa.js jordan/jordan-pwa.css jordan/index.html jordan/sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Materialize PWA v357 book library and speech tracking"
+            git push origin HEAD:main
+          fi
