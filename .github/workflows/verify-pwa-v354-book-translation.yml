@@ -1,0 +1,91 @@
+name: Verify PWA v354 Book Translation
+
+on:
+  push:
+    branches: ["easy-english-ai-v354-book-translation"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pwa-v354-book-translation
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: easy-english-ai-v354-book-translation
+          fetch-depth: 0
+      - name: Apply v354 upgrade
+        run: python3 tool/upgrade_pwa_v354_book_translation.py
+      - name: JavaScript syntax
+        run: |
+          node --check jordan/jordan-pwa.js
+          node --check jordan/sw.js
+      - name: Functional regression checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('jordan/jordan-pwa.js').read_text()
+          idx=Path('jordan/index.html').read_text()
+          sw=Path('jordan/sw.js').read_text()
+          required=[
+            "const ENRICH_DB='easy_english_ai_enrichment_v1'",
+            'indexedDB.open',
+            'navigator.hardwareConcurrency',
+            'dictionaryapi.dev',
+            'mymemory.translated.net',
+            'async function extractPdf(file,onPage,onProgress)',
+            'await pdf.destroy',
+            'function shouldSkipForGrade',
+            "['1','2','3'].includes",
+            'function bookTranslate()',
+            "data-mode=\"words\"",
+            "data-mode=\"sentences\"",
+            'function translateBookRun(mode)',
+            "page==='booktranslate'",
+            'استوديو AI للكتاب',
+            'ترجمة كتاب',
+            'الكلمات ومعانيها',
+            'الجمل ومعانيها',
+          ]
+          missing=[x for x in required if x not in js]
+          assert not missing, missing
+          assert 'jordan-pwa.js?v=354' in idx
+          assert 'sw.js?v=354-book-translation-1' in idx
+          assert 'easy-english-ai-pwa-v354-book-translation' in sw
+          assert 'jordan-pwa.js?v=354' in sw
+          assert js.count('function render()') == 1
+          assert js.count('function bookTranslate()') == 1
+          assert js.count('async function extractPdf') == 1
+          print('v354 regression checks passed')
+          PY
+      - name: Preserve unified runtime
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html=Path('jordan/index.html').read_text()
+          scripts=re.findall(r'<script\s+src="([^"]+)"',html)
+          assert scripts == ['jordan-pwa.js?v=354'], scripts
+          forbidden=['app.js','v2-learning.js','excel-import-v14.js','backup-tools.js','import-refresh.js','ios-fixes.js','sentence-display-v15.js','easy-english-v344.js','easy-english-v345-patch.js']
+          assert not any(x in html for x in forbidden)
+          print('single runtime preserved')
+          PY
+      - name: Persist v354 source
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jordan/jordan-pwa.js jordan/index.html jordan/sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Materialize PWA v354 book translation"
+            git push origin HEAD:easy-english-ai-v354-book-translation
+          fi
