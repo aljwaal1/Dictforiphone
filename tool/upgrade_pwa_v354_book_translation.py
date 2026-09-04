@@ -1,0 +1,92 @@
+from pathlib import Path
+
+JS = Path('jordan/jordan-pwa.js')
+INDEX = Path('jordan/index.html')
+SW = Path('jordan/sw.js')
+
+
+def replace_between(text: str, start: str, end: str, replacement: str) -> str:
+    a = text.find(start)
+    if a < 0:
+        raise SystemExit(f'missing start marker: {start}')
+    b = text.find(end, a)
+    if b < 0:
+        raise SystemExit(f'missing end marker: {end}')
+    return text[:a] + replacement.rstrip() + '\n' + text[b:]
+
+
+js = JS.read_text(encoding='utf-8')
+
+helpers = r'''const ENRICH_DB='easy_english_ai_enrichment_v1';
+const DEVICE_WORKERS=Math.max(2,Math.min(4,Number(navigator.hardwareConcurrency||4)));
+function idleYield(){return new Promise(resolve=>(window.requestIdleCallback?requestIdleCallback(()=>resolve(),{timeout:80}):setTimeout(resolve,0)))}
+function openEnrichDb(){return new Promise((resolve,reject)=>{try{const req=indexedDB.open(ENRICH_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('kv'))req.result.createObjectStore('kv')};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)}catch(e){reject(e)}})}
+async function enrichCacheGet(key){try{const d=await openEnrichDb();return await new Promise(resolve=>{const tx=d.transaction('kv','readonly'),q=tx.objectStore('kv').get(key);q.onsuccess=()=>resolve(q.result??null);q.onerror=()=>resolve(null);tx.oncomplete=()=>d.close()})}catch(_){return null}}
+async function enrichCacheSet(key,value){try{const d=await openEnrichDb();await new Promise(resolve=>{const tx=d.transaction('kv','readwrite');tx.objectStore('kv').put(value,key);tx.oncomplete=resolve;tx.onerror=resolve});d.close()}catch(_){}}
+async function fetchJson(url,timeout=7000){const c=new AbortController(),timer=setTimeout(()=>c.abort(),timeout);try{const r=await fetch(url,{signal:c.signal,cache:'no-store',headers:{'Accept':'application/json'}});if(!r.ok)throw new Error(`HTTP ${r.status}`);return await r.json()}finally{clearTimeout(timer)}}
+async function translateEnAr(text){const clean=String(text||'').replace(/\s+/g,' ').trim();if(!clean)return '';const key='tr:'+clean.toLowerCase();const cached=await enrichCacheGet(key);if(typeof cached==='string')return cached;try{const j=await fetchJson('https://api.mymemory.translated.net/get?q='+encodeURIComponent(clean)+'&langpair=en%7Car',8500);const out=String(j?.responseData?.translatedText||'').trim();if(out&&out.toLowerCase()!==clean.toLowerCase()){await enrichCacheSet(key,out);return out}}catch(_){}return ''}
+async function dictionaryExample(word){const w=String(word||'').trim().toLowerCase();if(!w)return '';const key='ex:'+w,cached=await enrichCacheGet(key);if(typeof cached==='string')return cached;try{const j=await fetchJson('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(w),6500);for(const entry of Array.isArray(j)?j:[]){for(const meaning of Array.isArray(entry?.meanings)?entry.meanings:[]){for(const def of Array.isArray(meaning?.definitions)?meaning.definitions:[]){const ex=String(def?.example||'').replace(/\s+/g,' ').trim();if(ex.length>=12&&ex.length<=220){await enrichCacheSet(key,ex);return ex}}}}}catch(_){}return ''}
+function existingWord(word){const q=String(word||'').toLowerCase();return db.words.find(w=>String(w.word_en||'').toLowerCase()===q)||null}
+async function enrichVocabulary(word,contextSentence=''){const known=existingWord(word);let meaning=String(known?.meaning_ar||'').trim();let example=String(contextSentence||known?.example_en||'').trim();let exampleAr=String(known?.example_ar||'').trim();if(!example)example=await dictionaryExample(word);if(!meaning)meaning=await translateEnAr(word);if(example&&!exampleAr)exampleAr=await translateEnAr(example);return {meaning,example,exampleAr}}
+async function mapBatches(list,fn,onProgress){let done=0;for(let i=0;i<list.length;i+=DEVICE_WORKERS){const batch=list.slice(i,i+DEVICE_WORKERS);await Promise.all(batch.map(fn));done+=batch.length;onProgress?.(Math.min(done,list.length),list.length);await idleYield()}}
+function sentenceList(text){return String(text||'').replace(/\s+/g,' ').split(/(?<=[.!?])\s+/).map(x=>x.trim()).filter(x=>x.length>=12&&x.length<=500&&/[A-Za-z]{2}/.test(x))}
+function sameWord(a,b){return String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase()}
+function shouldSkipForGrade(word,grade){const g=String(grade||'');if(db.words.some(w=>String(w.grade)===g&&sameWord(w.word_en,word)))return true;const n=Number(g);if(n>=4&&db.words.some(w=>['1','2','3'].includes(String(w.grade))&&sameWord(w.word_en,word)))return true;return false}
+'''
+
+if "const ENRICH_DB='easy_english_ai_enrichment_v1';" not in js:
+    marker = 'function exportDb()'
+    pos = js.find(marker)
+    if pos < 0:
+        raise SystemExit('missing exportDb marker')
+    js = js[:pos] + helpers + '\n' + js[pos:]
+
+home = r'''function home(){const total=db.words.length;const grades=new Set(db.words.map(w=>w.grade).filter(Boolean)).size;shell(`<div class="j-top"><div><h1 class="j-title">Easy English AI</h1><p class="j-sub">تعلم الإنجليزية بسهولة • iPhone وWindows</p></div><div class="j-badge">PWA متعدد الأجهزة</div></div><div class="j-stats"><div class="j-stat">${total} كلمة</div><div class="j-stat">${grades} صفوف</div></div><div class="j-grid"><article class="j-card" data-go="search"><div class="ico">🔎</div><h3>AI بحث</h3><p>اكتب أول حرف وشاهد النتائج فورًا بالعربية أو الإنجليزية مع النطق.</p></article><article class="j-card" data-go="curriculum"><div class="ico">📚</div><h3>الصفوف</h3><p>صف → فصل → وحدة → درس، مع الكلمات والأمثلة المرتبطة.</p></article><article class="j-card" data-go="booklab"><div class="ico">🧪</div><h3>استوديو AI للكتاب</h3><p>ارفع PDF واستخرج الكلمات التعليمية مع جلب المعاني والجمل تلقائيًا.</p></article><article class="j-card" data-go="booktranslate"><div class="ico">🌐</div><h3>ترجمة كتاب</h3><p>كتاب عام بدون صف: كلمات ومعاني أو جمل ومعاني.</p></article><article class="j-card" data-go="learn"><div class="ico">🎯</div><h3>تدريب ومراجعة</h3><p>بطاقات واختبار سريع ومراجعة الكلمات التي تحتاج تركيزًا.</p></article></div>`);ROOT.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>{page=x.dataset.go;render()})}
+'''
+js = replace_between(js, 'function home()', 'function search()', home)
+
+pdf_funcs = r'''async function extractPdf(file,onPage,onProgress){await ensurePdfJs();const data=new Uint8Array(await file.arrayBuffer());const pdf=await pdfjsLib.getDocument({data}).promise;try{for(let i=1;i<=pdf.numPages;i++){const p=await pdf.getPage(i);try{const tc=await p.getTextContent();const text=tc.items.map(x=>x.str).join(' ');await onPage?.(text,i,pdf.numPages);onProgress?.(i,pdf.numPages)}finally{try{p.cleanup?.()}catch(_){}}await idleYield()}return pdf.numPages}finally{try{await pdf.destroy?.()}catch(_){}}}
+'''
+js = replace_between(js, 'async function extractPdf', 'function bookLab()', pdf_funcs)
+
+booklab = r'''function bookLab(){shell(`<div class="j-top"><div><h1 class="j-title">استوديو AI للكتاب</h1><p class="j-sub">استخراج محلي من PDF ثم جلب المعنى والجملة والترجمة عند الحاجة</p></div></div><div class="j-panel"><div class="j-row"><select id="bg" class="j-select">${G.map(g=>`<option value="${g}">الصف ${g}</option>`).join('')}</select><select id="bs" class="j-select"><option>الفصل الأول</option><option>الفصل الثاني</option></select></div><div class="j-toolbar"><input id="bf" type="file" accept="application/pdf" class="j-input"><button id="ba" class="j-btn">استخراج الكلمات</button></div><div class="j-note">داخل نفس الصف لا تتكرر الكلمة. بين الصفوف يسمح بالتكرار، لكن كلمات الصفوف 1–3 لا تعاد في الصفوف 4–12. المعالجة صفحة بصفحة لتقليل استهلاك الذاكرة.</div><div id="bp" style="margin-top:12px"></div><div id="br" class="j-results" style="margin-top:14px"></div></div>`);ROOT.querySelector('#ba').onclick=analyzeBook}
+'''
+js = replace_between(js, 'function bookLab()', 'async function analyzeBook()', booklab)
+
+analyze = r'''async function analyzeBook(){const f=ROOT.querySelector('#bf').files[0],g=ROOT.querySelector('#bg').value,s=ROOT.querySelector('#bs').value,p=ROOT.querySelector('#bp'),r=ROOT.querySelector('#br');if(!f){alert('اختر ملف PDF أولًا');return}p.innerHTML='<div class="j-progress"><div style="width:5%"></div></div><p>جاري قراءة الكتاب...</p>';try{const map=new Map();let unit='',lesson='',pagesRead=0;await extractPdf(f,async(text,pi,total)=>{const um=text.match(/\bUnit\s+([0-9]+|[A-Za-z]+)/i),lm=text.match(/\bLesson\s+([0-9]+|[A-Za-z]+)/i);if(um)unit=`Unit ${um[1]}`;if(lm)lesson=`Lesson ${lm[1]}`;const ms=[...text.matchAll(/[A-Za-z][A-Za-z'-]*/g)];ms.forEach((m,idx)=>{const raw=m[0],before=text.slice(Math.max(0,m.index-3),m.index),start=idx===0||/[.!?]\s*$/.test(before);if(!validWord(raw,!start)||shouldSkipForGrade(raw,g))return;const key=raw.toLowerCase(),old=map.get(key);if(old){old.frequency++;if(!old.example_en)old.example_en=sentenceFor(text,raw)}else{const known=existingWord(raw);map.set(key,{grade:g,semester:s,unit,lesson,word_en:raw.toLowerCase(),meaning_ar:known?.meaning_ar||'',example_en:sentenceFor(text,raw)||known?.example_en||'',example_ar:known?.example_ar||'',source_page:String(pi),source_name:f.name,frequency:1,selected:true})}});pagesRead=pi;if(pi===1||pi%4===0||pi===total)p.innerHTML=`<div class="j-progress"><div style="width:${Math.round(pi/total*60)}%"></div></div><p>قراءة الصفحة ${pi} من ${total} • ${map.size} كلمة</p>`},(i,n)=>{});const list=[...map.values()];window.__jCandidates=list;if(!list.length){p.innerHTML='<div class="j-note">لم يتم العثور على كلمات جديدة مناسبة بعد تطبيق قواعد التكرار.</div>';r.innerHTML='';return}await mapBatches(list,async c=>{if(c.meaning_ar&&c.example_en&&c.example_ar)return;const x=await enrichVocabulary(c.word_en,c.example_en);if(!c.meaning_ar)c.meaning_ar=x.meaning;if(!c.example_en)c.example_en=x.example;if(!c.example_ar)c.example_ar=x.exampleAr},(done,total)=>{p.innerHTML=`<div class="j-progress"><div style="width:${60+Math.round(done/Math.max(1,total)*40)}%"></div></div><p>إكمال المعاني والجمل ${done} من ${total}</p>`});p.innerHTML=`<div class="j-stats"><div class="j-stat">${pagesRead} صفحة</div><div class="j-stat">${list.length} كلمة مرشحة</div></div>`;r.innerHTML=`<div class="j-toolbar"><button id="saveCand" class="j-btn green">اعتماد الكلمات</button><button id="allCand" class="j-btn secondary">تحديد/إلغاء الكل</button></div>${list.map((w,i)=>`<div class="j-word"><input class="j-check cand" data-i="${i}" type="checkbox" checked><div><div class="j-word-en">${esc(w.word_en)} <button class="j-btn light j-speak" data-speak="${esc(w.word_en)}">🔊</button></div><input class="j-input cm" data-i="${i}" placeholder="المعنى العربي" value="${esc(w.meaning_ar)}"><textarea class="j-textarea ce" data-i="${i}" placeholder="الجملة الإنجليزية">${esc(w.example_en)}</textarea><textarea class="j-textarea ca" data-i="${i}" placeholder="ترجمة الجملة">${esc(w.example_ar)}</textarea><div class="j-meta">${esc([w.unit,w.lesson,`ص ${w.source_page}`,`تكرار ${w.frequency}`].filter(Boolean).join(' • '))}</div></div><button class="j-btn light j-speak" data-speak="${esc(w.example_en)}">🎧</button></div>`).join('')}`;bindSpeak();r.querySelectorAll('.cm').forEach(x=>x.oninput=()=>list[+x.dataset.i].meaning_ar=x.value);r.querySelectorAll('.ce').forEach(x=>x.oninput=()=>list[+x.dataset.i].example_en=x.value);r.querySelectorAll('.ca').forEach(x=>x.oninput=()=>list[+x.dataset.i].example_ar=x.value);r.querySelectorAll('.cand').forEach(x=>x.onchange=()=>list[+x.dataset.i].selected=x.checked);r.querySelector('#allCand').onclick=()=>{const on=list.some(x=>!x.selected);list.forEach(x=>x.selected=on);r.querySelectorAll('.cand').forEach(x=>x.checked=on)};r.querySelector('#saveCand').onclick=()=>saveCandidates(list)}catch(e){console.error(e);p.innerHTML=`<div class="j-note">تعذر تحليل الملف: ${esc(e.message||e)}. يحتاج جلب المعاني والترجمة إلى الإنترنت عند أول مرة، ثم تحفظ النتائج محليًا على الجهاز.</div>`}}
+'''
+js = replace_between(js, 'async function analyzeBook()', 'function saveCandidates', analyze)
+
+save_and_translate = r'''function saveCandidates(list){const chosen=list.filter(x=>x.selected&&x.meaning_ar.trim());if(!chosen.length){alert('أدخل معنى عربيًا لكلمة واحدة على الأقل');return}let added=0,updated=0,skipped=0;chosen.forEach(w=>{if(Number(w.grade)>=4&&db.words.some(x=>['1','2','3'].includes(String(x.grade))&&sameWord(x.word_en,w.word_en))){skipped++;return}const hit=db.words.find(x=>String(x.grade)===String(w.grade)&&sameWord(x.word_en,w.word_en));if(hit){if(!hit.meaning_ar&&w.meaning_ar)hit.meaning_ar=w.meaning_ar;if(!hit.example_en&&w.example_en)hit.example_en=w.example_en;if(!hit.example_ar&&w.example_ar)hit.example_ar=w.example_ar;updated++}else{db.words.push({...w,id:Date.now()+Math.random()});added++}});save();alert(`تم الحفظ. جديد: ${added} • محدث: ${updated}${skipped?` • مستبعد من الصفوف الأولى: ${skipped}`:''}`);page='curriculum';render()}
+
+function bookTranslate(){shell(`<div class="j-top"><div><h1 class="j-title">ترجمة كتاب</h1><p class="j-sub">بدون صف أو منهاج</p></div></div><div class="j-panel"><div class="j-grid"><article class="j-card bt-mode" data-mode="words"><div class="ico">🔤</div><h3>الكلمات ومعانيها</h3><p>يستخرج الكلمات مرة واحدة داخل الكتاب ويجلب معناها العربي.</p></article><article class="j-card bt-mode" data-mode="sentences"><div class="ico">💬</div><h3>الجمل ومعانيها</h3><p>يعرض الجملة الإنجليزية وتحتها ترجمتها العربية مع النطق.</p></article></div><div class="j-toolbar" style="margin-top:14px"><input id="btf" type="file" accept="application/pdf" class="j-input"><button id="btrun" class="j-btn" disabled>ابدأ الترجمة</button></div><div id="btchoice" class="j-note">اختر أولًا: الكلمات ومعانيها أو الجمل ومعانيها.</div><div id="btp" style="margin-top:12px"></div><div id="btr" class="j-results" style="margin-top:14px"></div></div>`);let mode='';ROOT.querySelectorAll('.bt-mode').forEach(c=>c.onclick=()=>{mode=c.dataset.mode;ROOT.querySelectorAll('.bt-mode').forEach(x=>x.style.outline='');c.style.outline='3px solid var(--j-primary,#0ea5e9)';ROOT.querySelector('#btchoice').textContent=mode==='words'?'النظام: الكلمات ومعانيها':'النظام: الجمل ومعانيها';ROOT.querySelector('#btrun').disabled=false});ROOT.querySelector('#btrun').onclick=()=>translateBookRun(mode)}
+
+async function translateBookRun(mode){const f=ROOT.querySelector('#btf')?.files?.[0],p=ROOT.querySelector('#btp'),r=ROOT.querySelector('#btr');if(!f){alert('اختر ملف PDF أولًا');return}if(!['words','sentences'].includes(mode)){alert('اختر نوع الترجمة أولًا');return}r.innerHTML='';const words=new Map(),sentences=[],sentenceSeen=new Set();let pages=0;try{await extractPdf(f,async(text,pi,total)=>{pages=pi;if(mode==='words'){for(const m of text.matchAll(/[A-Za-z][A-Za-z'-]*/g)){const raw=m[0];if(!validWord(raw,false))continue;const key=raw.toLowerCase();if(!words.has(key))words.set(key,{word:key,meaning:'',page:pi})}}else{for(const s of sentenceList(text)){const key=s.toLowerCase();if(sentenceSeen.has(key))continue;sentenceSeen.add(key);sentences.push({text:s,translation:'',page:pi})}}p.innerHTML=`<div class="j-progress"><div style="width:${Math.round(pi/total*45)}%"></div></div><p>قراءة الصفحة ${pi} من ${total}</p>`});const list=mode==='words'?[...words.values()]:sentences;if(!list.length){p.innerHTML='<div class="j-note">لم يتم العثور على محتوى مناسب للترجمة.</div>';return}await mapBatches(list,async item=>{if(mode==='words'){const x=await enrichVocabulary(item.word);item.meaning=x.meaning}else item.translation=await translateEnAr(item.text)},(done,total)=>{p.innerHTML=`<div class="j-progress"><div style="width:${45+Math.round(done/Math.max(1,total)*55)}%"></div></div><p>الترجمة ${done} من ${total}</p>`});p.innerHTML=`<div class="j-stats"><div class="j-stat">${pages} صفحة</div><div class="j-stat">${list.length} ${mode==='words'?'كلمة':'جملة'}</div></div>`;r.innerHTML=mode==='words'?list.map(x=>`<div class="j-word"><button class="j-btn light j-speak" data-speak="${esc(x.word)}">🔊</button><div><div class="j-word-en">${esc(x.word)}</div><div class="j-word-ar">${esc(x.meaning||'تعذر جلب المعنى')}</div><div class="j-meta">ص ${x.page}</div></div><span></span></div>`).join(''):list.map(x=>`<div class="j-word"><button class="j-btn light j-speak" data-speak="${esc(x.text)}">🔊</button><div><div class="j-example">${esc(x.text)}</div><div class="j-word-ar">${esc(x.translation||'تعذر جلب الترجمة')}</div><div class="j-meta">ص ${x.page}</div></div><span></span></div>`).join('');bindSpeak()}catch(e){console.error(e);p.innerHTML=`<div class="j-note">تعذر إكمال ترجمة الكتاب: ${esc(e.message||e)}</div>`}}
+
+function render(){if(page==='home')home();else if(page==='search')search();else if(page==='curriculum')curriculum();else if(page==='learn')learn();else if(page==='more')more();else if(page==='booklab')bookLab();else if(page==='booktranslate')bookTranslate();else home()}
+'''
+js = replace_between(js, 'function saveCandidates', 'function render()', save_and_translate)
+# Remove the old render body left after replacement by replacing duplicate first render occurrence if present.
+needle = "function render(){if(page==='home')home();else if(page==='search')search();else if(page==='curriculum')curriculum();else if(page==='learn')learn();else if(page==='more')more();else if(page==='booklab')bookLab();else home()}"
+js = js.replace(needle, '', 1)
+
+JS.write_text(js, encoding='utf-8')
+
+index = INDEX.read_text(encoding='utf-8')
+index = index.replace('manifest.webmanifest?v=353', 'manifest.webmanifest?v=354')
+index = index.replace('jordan-pwa.css?v=353', 'jordan-pwa.css?v=354')
+index = index.replace('easy-english-v345-patch.css?v=353', 'easy-english-v345-patch.css?v=354')
+index = index.replace('jordan-pwa.js?v=353', 'jordan-pwa.js?v=354')
+index = index.replace('sw.js?v=353-unified-1', 'sw.js?v=354-book-translation-1')
+index = index.replace('<!-- v353: one application runtime. Legacy UI engines are intentionally not loaded. -->', '<!-- v354: one application runtime with native iPhone-friendly PDF processing and book translation. -->')
+INDEX.write_text(index, encoding='utf-8')
+
+sw = SW.read_text(encoding='utf-8')
+sw = sw.replace("easy-english-ai-pwa-v353-unified", "easy-english-ai-pwa-v354-book-translation")
+sw = sw.replace('jordan-pwa.css?v=353', 'jordan-pwa.css?v=354')
+sw = sw.replace('easy-english-v345-patch.css?v=353', 'easy-english-v345-patch.css?v=354')
+sw = sw.replace('jordan-pwa.js?v=353', 'jordan-pwa.js?v=354')
+sw = sw.replace('manifest.webmanifest?v=353', 'manifest.webmanifest?v=354')
+SW.write_text(sw, encoding='utf-8')
+
+print('v354 upgrade applied')
