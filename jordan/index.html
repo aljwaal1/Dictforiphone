@@ -8,23 +8,23 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Easy English AI" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <link rel="manifest" href="manifest.webmanifest?v=355" />
+  <link rel="manifest" href="manifest.webmanifest?v=356" />
   <link rel="apple-touch-icon" href="icons/icon-192.svg" />
-  <link rel="stylesheet" href="jordan-pwa.css?v=355" />
-  <link rel="stylesheet" href="easy-english-v345-patch.css?v=355" />
+  <link rel="stylesheet" href="jordan-pwa.css?v=356" />
+  <link rel="stylesheet" href="easy-english-v345-patch.css?v=356" />
   <title>Easy English AI</title>
 </head>
 <body>
   <div id="app"></div>
 
   <!-- v354: one application runtime with native iPhone-friendly PDF processing and book translation. -->
-  <script src="jordan-pwa.js?v=355"></script>
+  <script src="jordan-pwa.js?v=356"></script>
 
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
         try {
-          const reg = await navigator.serviceWorker.register('./sw.js?v=355-paragraph-autosave-1', {
+          const reg = await navigator.serviceWorker.register('./sw.js?v=356-translation-resilience-1', {
             scope: './',
             updateViaCache: 'none'
           });
