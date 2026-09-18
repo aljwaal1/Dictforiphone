@@ -19,7 +19,7 @@ anchor="async function extractPdf(file,onPage,onProgress){"
 i=s.find(anchor)
 if i<0:
     raise SystemExit('extractPdf anchor missing')
-end=s.find("\\nfunction bookLab(){",i)
+end=s.find("function bookLab(){",i)
 if end<0:
     raise SystemExit('bookLab anchor missing')
 extra=r'''
