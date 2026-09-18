@@ -1,0 +1,52 @@
+name: Verify PWA v358 Camera OCR Autosave
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "tool/upgrade_pwa_v358_camera_ocr_autosave.py"
+      - ".github/workflows/verify-pwa-v358-camera-ocr-autosave.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply v358 upgrade
+        run: python3 tool/upgrade_pwa_v358_camera_ocr_autosave.py
+      - name: JavaScript syntax
+        run: node --check jordan/jordan-pwa.js
+      - name: v358 feature checks
+        shell: bash
+        run: |
+          grep -q "ensureTesseract" jordan/jordan-pwa.js
+          grep -q "ocrImage" jordan/jordan-pwa.js
+          grep -q 'id="bcam"' jordan/jordan-pwa.js
+          grep -q 'id="bimg"' jordan/jordan-pwa.js
+          grep -q "capture=\"environment\"" jordan/jordan-pwa.js
+          grep -q "booklab_latest_v358" jordan/jordan-pwa.js
+          grep -q "saveLabDraft" jordan/jordan-pwa.js
+          grep -q "restoreLabDraft" jordan/jordan-pwa.js
+          grep -q "await onProgress" jordan/jordan-pwa.js
+          grep -q "v=358" jordan/index.html
+          grep -q "v358-camera-ocr-autosave" jordan/sw.js
+          grep -q "الفقرات ومعانيها" jordan/jordan-pwa.js
+          grep -q "حفظ الكتاب" jordan/jordan-pwa.js
+      - name: Persist v358 source
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jordan/jordan-pwa.js jordan/index.html jordan/sw.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Materialize PWA v358 camera OCR and progressive autosave"
+            git push origin HEAD:main
+          fi
